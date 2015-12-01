@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>org.isuper</groupId>
 			<artifactId>isuper.http-client</artifactId>
-			<version>0.0.3</version>
+			<version>0.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
