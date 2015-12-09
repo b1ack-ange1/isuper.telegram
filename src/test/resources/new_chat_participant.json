@@ -1,0 +1,34 @@
+{
+	"message":{
+		"from":{
+			"id":111797653,
+			"username":"sgralpha",
+			"firstName":"Super (SgrAlpha)",
+			"lastName":"@AM01-LIMA-01"
+		},
+		"date":1449626449,
+		"chat":{
+			"id":-4631581,
+			"type":"GROUP",
+			"title":"zoo",
+			"username":null,
+			"firstName":null,
+			"lastName":null
+		},
+		"text":null,
+		"location":null,
+		"id":3,
+		"forwardFrom":null,
+		"forwardDate":0,
+		"replyTo":null,
+		"newChatParticipant":{
+			"id":144434605,
+			"username":"enl_jarvis_bot",
+			"firstName":"Roland Jarvis",
+			"lastName":null
+		},
+		"leftChatParticipant":null,
+		"newChatTitle":null
+	},
+	"id":568393799
+}

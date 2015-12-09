@@ -1,0 +1,29 @@
+{
+	"message":{
+		"from":{
+			"id":111797653,
+			"username":"sgralpha",
+			"firstName":"Super (SgrAlpha)",
+			"lastName":"@AM01-LIMA-01"
+		},
+		"date":1449626581,
+		"chat":{
+			"id":-4631581,
+			"type":"GROUP",
+			"title":"zoo",
+			"username":null,
+			"firstName":null,
+			"lastName":null
+		},
+		"text":"/start",
+		"location":null,
+		"id":6,
+		"forwardFrom":null,
+		"forwardDate":0,
+		"replyTo":null,
+		"newChatParticipant":null,
+		"leftChatParticipant":null,
+		"newChatTitle":null
+	},
+	"id":568393802
+}
