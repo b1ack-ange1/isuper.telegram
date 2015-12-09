@@ -56,37 +56,49 @@ public class TelegramClient implements Closeable {
 	/**
 	 * @param token
 	 * 					The token of telegram API
-	 * @param useMarkdown
-	 * 					Parse the message with markdown or not
-	 * @param disablePreview
-	 * 					Disable web page preview or not
 	 * @param chatIDs
 	 * 					Multiple chat IDs
 	 * @param msg
 	 * 					The content of message
+	 * @param useMarkdown
+	 * 					Parse the message with markdown or not
+	 * @param disablePreview
+	 * 					Disable web page preview or not
 	 */
-	public void sendMessageToMultipleTelegramChats(String token, boolean useMarkdown, boolean disablePreview, Long[] chatIDs, String msg) {
+	public void sendMessageToMultipleTelegramChats(String token, Long[] chatIDs, String msg, boolean useMarkdown, boolean disablePreview) {
 		if (chatIDs == null || chatIDs.length < 1) {
 			return;
 		}
-		for (Long chatID : chatIDs) {
-			sendMessageToSingleTelegramChat(token, useMarkdown, disablePreview, chatID, msg);
+		for (long chatID : chatIDs) {
+			sendMessageToSingleTelegramChat(token, chatID, msg, useMarkdown, disablePreview);
 		}
 	}
 	
 	/**
 	 * @param token
 	 * 					The token of telegram API
-	 * @param useMarkdown
-	 * 					Parse the message with markdown or not
-	 * @param disablePreview
-	 * 					Disable web page preview or not
 	 * @param chatID
-	 * 					The chat ID to send message into
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
 	 * @param msg
-	 * 					The content of message
+	 * 					Text of the message to be sent
 	 */
-	public void sendMessageToSingleTelegramChat(String token, boolean useMarkdown, boolean disablePreview, Long chatID, String msg) {
+	public void sendMessageToSingleTelegramChat(String token, long chatID, String msg) {
+		this.sendMessageToSingleTelegramChat(token, chatID, msg, false, false);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param msg
+	 * 					Text of the message to be sent
+	 * @param useMarkdown
+	 * 					Send Markdown or not
+	 * @param disablePreview
+	 * 					Disables link previews for links in this message or not
+	 */
+	public void sendMessageToSingleTelegramChat(String token, long chatID, String msg, boolean useMarkdown, boolean disablePreview) {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", "" + chatID));
 		items.add(new BasicNameValuePair("text", "" + msg));
@@ -94,6 +106,64 @@ public class TelegramClient implements Closeable {
 			items.add(new BasicNameValuePair("parse_mode", "Markdown"));
 		}
 		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
+		this.sendMessage(token, items);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param replyTo
+	 * 					If the message is a reply, ID of the original message
+	 * @param msg
+	 * 					Text of the message to be sent
+	 */
+	public void sendReplyMessage(String token, Long chatID, long replyTo, String msg) {
+		this.sendReplyMessage(token, chatID.toString(), replyTo, msg, false, false);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param replyTo
+	 * 					If the message is a reply, ID of the original message
+	 * @param msg
+	 * 					Text of the message to be sent
+	 */
+	public void sendReplyMessage(String token, String chatID, long replyTo, String msg) {
+		this.sendReplyMessage(token, chatID, replyTo, msg, false, false);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param replyTo
+	 * 					If the message is a reply, ID of the original message
+	 * @param msg
+	 * 					Text of the message to be sent
+	 * @param useMarkdown
+	 * 					Send Markdown or not
+	 * @param disablePreview
+	 * 					Disables link previews for links in this message or not
+	 */
+	public void sendReplyMessage(String token, String chatID, long replyTo, String msg, boolean useMarkdown, boolean disablePreview) {
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		items.add(new BasicNameValuePair("text", "" + msg));
+		if (useMarkdown) {
+			items.add(new BasicNameValuePair("parse_mode", "Markdown"));
+		}
+		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
+		items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
+		this.sendMessage(token, items);
+	}
+
+	private void sendMessage(String token, List<NameValuePair> items) {
 		try {
 			HttpPost post = new HttpPost("https://api.telegram.org/bot" + token + "/sendMessage");
 			post.setEntity(new UrlEncodedFormEntity(items, "UTF-8"));
