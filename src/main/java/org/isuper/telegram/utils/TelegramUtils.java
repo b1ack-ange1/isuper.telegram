@@ -68,8 +68,14 @@ public class TelegramUtils {
 			argument = tmp[1];
 		}
 		cmdToBot = cmdToBot.replaceFirst("/", "");
+		if (Preconditions.isEmptyString(cmdToBot)) {
+			return null;
+		}
 		tmp = cmdToBot.split("@", 2);
 		String type = tmp[0];
+		if (Preconditions.isEmptyString(type)) {
+			return null;
+		}
 		String toBot = null;
 		if (tmp.length > 1) {
 			toBot = tmp[1];
