@@ -23,6 +23,7 @@ public class TelegramUtils {
 
 	/**
 	 * @return
+	 * 			An instance of JsonFactory
 	 */
 	public static JsonFactory getJsonFactory() {
 		return JSON_FACTORY;
@@ -30,6 +31,7 @@ public class TelegramUtils {
 
 	/**
 	 * @return
+	 * 			An instance of ObjectMapper
 	 */
 	public static ObjectMapper getObjectMapper() {
 		return OBJECT_MAPPER;
@@ -52,7 +54,9 @@ public class TelegramUtils {
 	
 	/**
 	 * @param text
+	 * 				The text to parse command from
 	 * @return
+	 * 				An instance of command
 	 */
 	public static Command parseCommandFromText(String text) {
 		if (Preconditions.isEmptyString(text)) {

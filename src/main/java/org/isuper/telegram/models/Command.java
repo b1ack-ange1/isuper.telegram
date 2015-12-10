@@ -24,8 +24,11 @@ public class Command implements Serializable {
 	
 	/**
 	 * @param type
+	 * 				The type of command
 	 * @param toBot
+	 * 				The robot which send command to
 	 * @param argument
+	 * 				argument for command
 	 */
 	public Command(String type, String toBot, String argument) {
 		if (Preconditions.isEmptyString(type)) {
