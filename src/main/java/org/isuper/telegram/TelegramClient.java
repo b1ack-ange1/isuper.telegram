@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -135,7 +136,11 @@ public class TelegramClient implements Closeable {
 		HttpPost post = new HttpPost("https://api.telegram.org/bot" + token + "/sendMessage");
 		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
 		LOGGER.trace(post.getRequestLine());
-		this.client.execute(post, DEFAULT_ASYNC_RESPONSE_HANDLER);
+		try {
+			this.client.execute(post, DEFAULT_ASYNC_RESPONSE_HANDLER).get();
+		} catch (InterruptedException | ExecutionException e) {
+			LOGGER.error(e.getMessage(), e);
+		}
 	}
 
 	/* (non-Javadoc)
