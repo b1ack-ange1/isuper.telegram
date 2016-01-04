@@ -17,7 +17,6 @@ import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -32,8 +31,6 @@ public class TelegramClient implements Closeable {
 	
 	private static final Logger LOGGER = LogManager.getLogger("telegram-client");
 	
-	private static final TelegramAsyncResponseHandler DEFAULT_ASYNC_RESPONSE_HANDLER = new TelegramAsyncResponseHandler();
-
 	private final AsyncHttpClient client;
 	
 	/**
@@ -137,8 +134,20 @@ public class TelegramClient implements Closeable {
 		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
 		LOGGER.trace(post.getRequestLine());
 		try {
-			this.client.execute(post, DEFAULT_ASYNC_RESPONSE_HANDLER).get();
-		} catch (InterruptedException | ExecutionException e) {
+			HttpResponse resp = this.client.execute(post, null).get();
+			StatusLine status = resp.getStatusLine();
+			LOGGER.trace(resp.getStatusLine());
+			
+			HttpEntity entity = resp.getEntity();
+			String contentType = entity.getContentType().getValue();
+			LOGGER.trace(contentType);
+			
+			String content = EntityUtils.toString(entity);
+			LOGGER.trace(content);
+			if (status.getStatusCode() != 200) {
+				LOGGER.warn(String.format("%d response received from server: %s", status.getStatusCode(), content));
+			}
+		} catch (InterruptedException | ExecutionException | ParseException | IOException e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 	}
@@ -149,49 +158,6 @@ public class TelegramClient implements Closeable {
 	@Override
 	public void close() throws IOException {
 		this.client.close();
-	}
-	
-	private static class TelegramAsyncResponseHandler implements FutureCallback<HttpResponse> {
-
-		/* (non-Javadoc)
-		 * @see org.apache.http.concurrent.FutureCallback#completed(java.lang.Object)
-		 */
-		@Override
-		public void completed(HttpResponse resp) {
-			StatusLine status = resp.getStatusLine();
-			LOGGER.trace(resp.getStatusLine());
-			
-			HttpEntity entity = resp.getEntity();
-			String contentType = entity.getContentType().getValue();
-			LOGGER.trace(contentType);
-			
-			try {
-				String content = EntityUtils.toString(entity);
-				LOGGER.trace(content);
-				if (status.getStatusCode() != 200) {
-					LOGGER.warn(String.format("%d response received from server: %s", status.getStatusCode(), content));
-				}
-			} catch (ParseException | IOException e) {
-				LOGGER.error(e.getMessage(), e);
-			}
-		}
-
-		/* (non-Javadoc)
-		 * @see org.apache.http.concurrent.FutureCallback#failed(java.lang.Exception)
-		 */
-		@Override
-		public void failed(Exception ex) {
-			LOGGER.error(ex.getMessage(), ex);
-		}
-
-		/* (non-Javadoc)
-		 * @see org.apache.http.concurrent.FutureCallback#cancelled()
-		 */
-		@Override
-		public void cancelled() {
-			LOGGER.error("Request to telegram server has been canncelled.");
-		}
-		
 	}
 
 }
