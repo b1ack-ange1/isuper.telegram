@@ -12,43 +12,43 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
- * This object represents an incoming update.
+ * This object represents a message.
  * 
  * @author Super Wang
  *
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
-public class Update implements Serializable {
-	
+public class InlineQuery implements Serializable {
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -9087313071078446145L;
+	private static final long serialVersionUID = -5537039044986720296L;
 	
 	public final long id;
-	public final Message message;
-	public final InlineQuery inlineQuery;
-	public final ChosenInlineResult chosenInlineResult;
+	public final User from;
+	public final String query;
+	public final String offset;
 	
 	/**
 	 * @param id
-	 * 				The update‘s unique identifier. Update identifiers start from a certain positive number and increase sequentially.
-	 * @param message
-	 * 				Optional. New incoming message of any kind — text, photo, sticker, etc.
-	 * @param inlineQuery
-	 * 				Optional. Optional. New incoming inline query.
-	 * @param chosenInlineResult
-	 * 				Optional. Optional. The result of a inline query that was chosen by a user and sent to their chat partner.
+	 * 					Unique identifier for this query
+	 * @param from
+	 * 					Sender
+	 * @param query
+	 * 					Text of the query
+	 * @param offset
+	 * 					Offset of the results to be returned, can be controlled by the bot
 	 */
-	public Update(
-			@JsonProperty("update_id") long id,
-			@JsonProperty("message") Message message,
-			@JsonProperty("inline_query") InlineQuery inlineQuery,
-			@JsonProperty("chosen_inline_result") ChosenInlineResult chosenInlineResult) {
+	public InlineQuery(
+			@JsonProperty("id") long id,
+			@JsonProperty("from") User from,
+			@JsonProperty("query") String query,
+			@JsonProperty("offset") String offset) {
 		this.id = id;
-		this.message = message;
-		this.inlineQuery = inlineQuery;
-		this.chosenInlineResult = chosenInlineResult;
+		this.from = from;
+		this.query = query;
+		this.offset = offset;
 	}
 
 	/* (non-Javadoc)
@@ -73,7 +73,7 @@ public class Update implements Serializable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Update other = (Update) obj;
+		InlineQuery other = (InlineQuery) obj;
 		if (this.id != other.id)
 			return false;
 		return true;
