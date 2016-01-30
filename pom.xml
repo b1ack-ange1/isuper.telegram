@@ -48,12 +48,12 @@
 		<dependency>
 			<groupId>org.isuper</groupId>
 			<artifactId>isuper.common</artifactId>
-			<version>0.0.2</version>
+			<version>0.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.isuper</groupId>
 			<artifactId>isuper.http-client</artifactId>
-			<version>0.1.0</version>
+			<version>0.1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
