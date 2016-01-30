@@ -9,7 +9,7 @@
 
 	<groupId>org.isuper</groupId>
 	<artifactId>isuper.telegram</artifactId>
-	<version>0.1.5</version>
+	<version>0.1.6-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Telegram Client</name>
@@ -29,7 +29,7 @@
 		<connection>scm:git:git@github.com:orgisuper/isuper.telegram.git</connection>
 		<developerConnection>scm:git:git@github.com:orgisuper/isuper.telegram.git</developerConnection>
 		<url>https://github.com/orgisuper/isuper.telegram</url>
-		<tag>v0.1.5</tag>
+		<tag>HEAD</tag>
 	</scm>
 	<developers>
 		<developer>
