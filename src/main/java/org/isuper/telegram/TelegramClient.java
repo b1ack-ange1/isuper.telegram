@@ -9,11 +9,11 @@ import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -86,7 +86,7 @@ public class TelegramClient implements Closeable {
 			items.add(new BasicNameValuePair("parse_mode", "Markdown"));
 		}
 		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
-		this.send(token, items);
+		this.sendRepeatly(token, items);
 	}
 
 	/**
@@ -126,29 +126,47 @@ public class TelegramClient implements Closeable {
 		}
 		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
 		items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
-		this.send(token, items);
+		this.sendRepeatly(token, items);
 	}
 
-	private void send(String token, List<NameValuePair> items) {
+	private void sendRepeatly(String token, List<NameValuePair> items) {
+		int interval = 1;
+		try {
+			while (!Thread.interrupted()) {
+				try {
+					this.send(token, items);
+					break;
+				} catch (Exception e) {
+					if (interval > 17) {
+						interval = 17;
+					}
+					TimeUnit.SECONDS.sleep(interval);
+					LOGGER.warn(String.format("Failed to send message back to telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+				}
+			}
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			LOGGER.info("Cancelling ...");
+		}
+	}
+
+	private void send(String token, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException {
 		HttpPost post = new HttpPost("https://api.telegram.org/bot" + token + "/sendMessage");
 		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
 		LOGGER.trace(post.getRequestLine());
-		try {
-			HttpResponse resp = this.client.execute(post, null).get();
-			StatusLine status = resp.getStatusLine();
-			LOGGER.trace(resp.getStatusLine());
-			
-			HttpEntity entity = resp.getEntity();
-			String contentType = entity.getContentType().getValue();
-			LOGGER.trace(contentType);
-			
-			String content = EntityUtils.toString(entity);
-			LOGGER.trace(content);
-			if (status.getStatusCode() != 200) {
-				LOGGER.warn(String.format("%d response received from server: %s", status.getStatusCode(), content));
-			}
-		} catch (InterruptedException | ExecutionException | ParseException | IOException e) {
-			LOGGER.error(e.getMessage(), e);
+		
+		HttpResponse resp = this.client.execute(post, null).get();
+		StatusLine status = resp.getStatusLine();
+		LOGGER.trace(resp.getStatusLine());
+		
+		HttpEntity entity = resp.getEntity();
+		String contentType = entity.getContentType().getValue();
+		LOGGER.trace(contentType);
+		
+		String content = EntityUtils.toString(entity);
+		LOGGER.trace(content);
+		if (status.getStatusCode() != 200) {
+			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
 		}
 	}
 
