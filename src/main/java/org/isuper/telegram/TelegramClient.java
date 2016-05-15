@@ -153,7 +153,7 @@ public class TelegramClient implements Closeable {
 		}
 	}
 
-	private void send(String token, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, MessageNotFoundException {
+	private void send(String token, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, MessageNotFoundException, TooManyRequestsException {
 		HttpPost post = new HttpPost("https://api.telegram.org/bot" + token + "/sendMessage");
 		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
 		LOGGER.trace(post.getRequestLine());
@@ -172,6 +172,8 @@ public class TelegramClient implements Closeable {
 			throw new MessageNotFoundException(content);
 		} else if (status.getStatusCode() == 403) {
 			throw new BotRemovedException(content);
+		} else if (status.getStatusCode() == 429) {
+			throw new TooManyRequestsException(content);
 		} else if (status.getStatusCode() != 200) {
 			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
 		}
