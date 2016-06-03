@@ -27,6 +27,7 @@ public class Update implements Serializable {
 	
 	public final long id;
 	public final Message message;
+	public final Message editedMessage;
 	public final InlineQuery inlineQuery;
 	public final ChosenInlineResult chosenInlineResult;
 	
@@ -35,6 +36,8 @@ public class Update implements Serializable {
 	 * 				The update‘s unique identifier. Update identifiers start from a certain positive number and increase sequentially.
 	 * @param message
 	 * 				Optional. New incoming message of any kind — text, photo, sticker, etc.
+	 * @param editedMessage
+	 * 				Optional. New version of a message that is known to the bot and was edited
 	 * @param inlineQuery
 	 * 				Optional. Optional. New incoming inline query.
 	 * @param chosenInlineResult
@@ -43,10 +46,12 @@ public class Update implements Serializable {
 	public Update(
 			@JsonProperty("update_id") long id,
 			@JsonProperty("message") Message message,
+			@JsonProperty("edited_message") Message editedMessage,
 			@JsonProperty("inline_query") InlineQuery inlineQuery,
 			@JsonProperty("chosen_inline_result") ChosenInlineResult chosenInlineResult) {
 		this.id = id;
 		this.message = message;
+		this.editedMessage = editedMessage;
 		this.inlineQuery = inlineQuery;
 		this.chosenInlineResult = chosenInlineResult;
 	}

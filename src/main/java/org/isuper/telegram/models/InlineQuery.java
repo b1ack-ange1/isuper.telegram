@@ -5,11 +5,10 @@ package org.isuper.telegram.models;
 
 import java.io.Serializable;
 
-import org.isuper.telegram.utils.TelegramUtils;
+import org.isuper.common.utils.Preconditions;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * This object represents a message.
@@ -25,8 +24,9 @@ public class InlineQuery implements Serializable {
 	 */
 	private static final long serialVersionUID = -5537039044986720296L;
 	
-	public final long id;
+	public final String id;
 	public final User from;
+	public final Location location;
 	public final String query;
 	public final String offset;
 	
@@ -35,61 +35,27 @@ public class InlineQuery implements Serializable {
 	 * 					Unique identifier for this query
 	 * @param from
 	 * 					Sender
+	 * @param location
+	 * 					Optional. Sender location, only for bots that request user location
 	 * @param query
 	 * 					Text of the query
 	 * @param offset
-	 * 					Offset of the results to be returned, can be controlled by the bot
+	 * 					Optional. Offset of the results to be returned, can be controlled by the bot
 	 */
 	public InlineQuery(
-			@JsonProperty("id") long id,
+			@JsonProperty("id") String id,
 			@JsonProperty("from") User from,
+			@JsonProperty("location") Location location,
 			@JsonProperty("query") String query,
 			@JsonProperty("offset") String offset) {
+		Preconditions.notEmptyString(id, "Inline query ID should be provided.");
 		this.id = id;
+		Preconditions.notNull(from, "Sender should be provided.");
 		this.from = from;
+		this.location = location;
+		Preconditions.notNull(query, "Text of the query should be provided.");
 		this.query = query;
 		this.offset = offset;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (this.id ^ (this.id >>> 32));
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		InlineQuery other = (InlineQuery) obj;
-		if (this.id != other.id)
-			return false;
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		try {
-			return TelegramUtils.getObjectMapper().writeValueAsString(this);
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
-		return "{}";
-	}
-	
 }

@@ -59,7 +59,7 @@ public class TelegramUtils {
 	 * 				An instance of command
 	 */
 	public static Command parseCommandFromText(String text) {
-		if (Preconditions.isEmptyString(text)) {
+		if (Preconditions.isEmptyString(text) || !text.startsWith("/")) {
 			return null;
 		}
 		String[] tmp = text.split(" ", 2);

@@ -27,10 +27,10 @@ public class User implements Serializable {
 	 */
 	private static final long serialVersionUID = 4052116696388288998L;
 	
-	public final long id;
-	public final String firstName;
-	public final String lastName;
-	public final String username;
+	private final long id;
+	private final String firstName;
+	private final String lastName;
+	private final String username;
 	
 	/**
 	 * @param id
@@ -49,12 +49,38 @@ public class User implements Serializable {
 			@JsonProperty("last_name") String lastName,
 			@JsonProperty("username") String username) {
 		this.id = id;
-		if (Preconditions.isEmptyString(firstName)) {
-			throw new IllegalArgumentException("User's or bot's first name cannot be null or empty string!");
-		}
+		Preconditions.notEmptyString(firstName, "User's or bot's first name cannot be null or empty string!");
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.username = username;
+	}
+
+	/**
+	 * @return the id
+	 */
+	public long getId() {
+		return this.id;
+	}
+
+	/**
+	 * @return the firstName
+	 */
+	public String getFirstName() {
+		return this.firstName;
+	}
+
+	/**
+	 * @return the lastName
+	 */
+	public String getLastName() {
+		return this.lastName;
+	}
+
+	/**
+	 * @return the username
+	 */
+	public String getUsername() {
+		return this.username;
 	}
 
 	/* (non-Javadoc)
