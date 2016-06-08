@@ -7,7 +7,7 @@ package org.isuper.telegram;
  * @author Super Wang
  *
  */
-public class MessageNotFoundException extends Exception {
+public class BadRequestException extends Exception {
 
 	/**
 	 * 
@@ -17,7 +17,7 @@ public class MessageNotFoundException extends Exception {
 	/**
 	 * @param message
 	 */
-	public MessageNotFoundException(String message) {
+	public BadRequestException(String message) {
 		super(message);
 	}
 

@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import org.isuper.telegram.utils.TelegramUtils;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +38,7 @@ public class ChosenInlineResult implements Serializable {
 	 * @param query
 	 * 					The query that was used to obtain the result.
 	 */
+	@JsonCreator
 	public ChosenInlineResult(
 			@JsonProperty("result_id") long result_id,
 			@JsonProperty("from") User from,

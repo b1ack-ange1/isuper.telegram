@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import org.isuper.common.utils.Preconditions;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -42,6 +43,7 @@ public class InlineQuery implements Serializable {
 	 * @param offset
 	 * 					Optional. Offset of the results to be returned, can be controlled by the bot
 	 */
+	@JsonCreator
 	public InlineQuery(
 			@JsonProperty("id") String id,
 			@JsonProperty("from") User from,

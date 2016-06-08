@@ -3,12 +3,16 @@
  */
 package org.isuper.telegram.models;
 
+import org.isuper.common.utils.Preconditions;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Super Wang
  *
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class InlineQueryResultArticle implements InlineQueryResult {
 	
 	private final String type = "article";
@@ -70,8 +74,11 @@ public class InlineQueryResultArticle implements InlineQueryResult {
 	 * 				Optional. Thumbnail height
 	 */
 	public InlineQueryResultArticle(String id, String title, InputMessageContent inputMessageContent, String url, Boolean hideURL, String description, String thumbURL, Integer thumbWidth, Integer thumbHeight) {
+		Preconditions.notEmptyString(id, "Articale ID should be provided.");
 		this.id = id;
+		Preconditions.notEmptyString(title, "Article title should be provided.");
 		this.title = title;
+		Preconditions.notNull(inputMessageContent, "Message content should be provided.");
 		this.inputMessageContent = inputMessageContent;
 		this.url = url;
 		this.hideURL = hideURL;

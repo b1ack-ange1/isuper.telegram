@@ -4,7 +4,7 @@
 package org.isuper.telegram.models;
 
 /**
- * @author Super
+ * @author Super Wang
  *
  */
 public enum MessageParseMode {

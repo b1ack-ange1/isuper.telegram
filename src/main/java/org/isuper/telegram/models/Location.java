@@ -5,7 +5,9 @@ package org.isuper.telegram.models;
 
 import org.isuper.telegram.utils.TelegramUtils;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -26,7 +28,8 @@ public class Location {
 	 * @param longitude
 	 * 					Longitude as defined by sender
 	 */
-	public Location(float latitude, float longitude) {
+	@JsonCreator
+	public Location(@JsonProperty("latitude") float latitude, @JsonProperty("longitude") float longitude) {
 		if (Math.abs(latitude) > 90) {
 			throw new IllegalArgumentException(String.format("Invalid latitude %f", latitude));
 		}

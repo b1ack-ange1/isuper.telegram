@@ -136,56 +136,6 @@ public class TelegramClient implements Closeable {
 		this.sendRepeatly(token, "sendMessage", items);
 	}
 
-	private void sendRepeatly(String token, String endpoint, List<NameValuePair> items) {
-		int interval = 1;
-		try {
-			while (!Thread.interrupted()) {
-				try {
-					this.send(token, endpoint, items);
-					break;
-				} catch (BotRemovedException | MessageNotFoundException e) {
-					LOGGER.error(e.getMessage());
-					break;
-				} catch (Exception e) {
-					if (interval > 17) {
-						interval = 17;
-					}
-					TimeUnit.SECONDS.sleep(interval);
-					LOGGER.warn(String.format("Failed to send response back to telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
-				}
-			}
-		} catch (InterruptedException ie) {
-			Thread.currentThread().interrupt();
-			LOGGER.info("Cancelling ...");
-		}
-	}
-
-	private void send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, MessageNotFoundException, TooManyRequestsException {
-		HttpPost post = new HttpPost(String.format("https://api.telegram.org/bot%s/%s", token, endpoint));
-		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
-		LOGGER.trace(post.getRequestLine());
-		
-		HttpResponse resp = this.client.execute(post, null).get();
-		StatusLine status = resp.getStatusLine();
-		LOGGER.trace(resp.getStatusLine());
-		
-		HttpEntity entity = resp.getEntity();
-		String contentType = entity.getContentType().getValue();
-		LOGGER.trace(contentType);
-		
-		String content = EntityUtils.toString(entity);
-		LOGGER.trace(content);
-		if (status.getStatusCode() == 400) {
-			throw new MessageNotFoundException(content);
-		} else if (status.getStatusCode() == 403) {
-			throw new BotRemovedException(content);
-		} else if (status.getStatusCode() == 429) {
-			throw new TooManyRequestsException(content);
-		} else if (status.getStatusCode() != 200) {
-			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
-		}
-	}
-
 	/**
 	 * @param token
 	 * 					The token of telegram API
@@ -219,6 +169,7 @@ public class TelegramClient implements Closeable {
 	public void answerInlineQuery(String token, String queryID, Collection<InlineQueryResult> results, Integer cacheTime, Boolean personal, String nextOffset) {
 		Preconditions.notEmptyString(queryID, "Answered query ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("inline_query_id", queryID));
 		try {
 			if (results == null) {
 				items.add(new BasicNameValuePair("results", TelegramUtils.getObjectMapper().writeValueAsString(Collections.emptyList())));
@@ -240,11 +191,61 @@ public class TelegramClient implements Closeable {
 		}
 		try {
 			this.send(token, "answerInlineQuery", items);
-		} catch (IOException | ExecutionException | InterruptedException | BotRemovedException | MessageNotFoundException | TooManyRequestsException e) {
+		} catch (IOException | ExecutionException | InterruptedException | BotRemovedException | BadRequestException | TooManyRequestsException e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 	}
 	
+	private void sendRepeatly(String token, String endpoint, List<NameValuePair> items) {
+		int interval = 1;
+		try {
+			while (!Thread.interrupted()) {
+				try {
+					this.send(token, endpoint, items);
+					break;
+				} catch (BotRemovedException | BadRequestException e) {
+					LOGGER.error(e.getMessage());
+					break;
+				} catch (Exception e) {
+					if (interval > 17) {
+						interval = 17;
+					}
+					TimeUnit.SECONDS.sleep(interval);
+					LOGGER.warn(String.format("Failed to send response back to telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+				}
+			}
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			LOGGER.info("Cancelling ...");
+		}
+	}
+
+	private void send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+		HttpPost post = new HttpPost(String.format("https://api.telegram.org/bot%s/%s", token, endpoint));
+		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
+		LOGGER.trace(post.getRequestLine());
+		
+		HttpResponse resp = this.client.execute(post, null).get();
+		StatusLine status = resp.getStatusLine();
+		LOGGER.trace(resp.getStatusLine());
+		
+		HttpEntity entity = resp.getEntity();
+		String contentType = entity.getContentType().getValue();
+		LOGGER.trace(contentType);
+		
+		String content = EntityUtils.toString(entity);
+		LOGGER.trace(content);
+		if (status.getStatusCode() == 400) {
+			throw new BadRequestException(content);
+		} else if (status.getStatusCode() == 403) {
+			throw new BotRemovedException(content);
+		} else if (status.getStatusCode() == 429) {
+			throw new TooManyRequestsException(content);
+		} else if (status.getStatusCode() != 200) {
+			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see java.io.Closeable#close()
 	 */

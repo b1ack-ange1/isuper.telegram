@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import org.isuper.telegram.utils.TelegramUtils;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,6 +44,7 @@ public class Update implements Serializable {
 	 * @param chosenInlineResult
 	 * 				Optional. Optional. The result of a inline query that was chosen by a user and sent to their chat partner.
 	 */
+	@JsonCreator
 	public Update(
 			@JsonProperty("update_id") long id,
 			@JsonProperty("message") Message message,
