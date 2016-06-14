@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
 import org.isuper.httpclient.AsyncHttpClient;
 import org.isuper.telegram.models.InlineQueryResult;
+import org.isuper.telegram.models.MessageParseMode;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -70,7 +71,7 @@ public class TelegramClient implements Closeable {
 	 * 					Text of the message to be sent
 	 */
 	public void sendMessage(String token, String chatID, String msg) {
-		this.sendMessage(token, chatID, msg, false, false);
+		this.sendMessage(token, chatID, msg, null, false);
 	}
 
 	/**
@@ -80,17 +81,17 @@ public class TelegramClient implements Closeable {
 	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
 	 * @param msg
 	 * 					Text of the message to be sent
-	 * @param useMarkdown
-	 * 					Send Markdown or not
+	 * @param parseMode
+	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
 	 * @param disablePreview
 	 * 					Disables link previews for links in this message or not
 	 */
-	public void sendMessage(String token, String chatID, String msg, boolean useMarkdown, boolean disablePreview) {
+	public void sendMessage(String token, String chatID, String msg, MessageParseMode parseMode, boolean disablePreview) {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", "" + chatID));
 		items.add(new BasicNameValuePair("text", "" + msg));
-		if (useMarkdown) {
-			items.add(new BasicNameValuePair("parse_mode", "Markdown"));
+		if (parseMode != null) {
+			items.add(new BasicNameValuePair("parse_mode", parseMode.name()));
 		}
 		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
 		this.sendRepeatly(token, "sendMessage", items);
@@ -107,7 +108,7 @@ public class TelegramClient implements Closeable {
 	 * 					Text of the message to be sent
 	 */
 	public void replyMessage(String token, String chatID, long replyTo, String msg) {
-		this.replyMessage(token, chatID, replyTo, msg, false, false);
+		this.replyMessage(token, chatID, replyTo, msg, null, false);
 	}
 
 	/**
@@ -119,17 +120,21 @@ public class TelegramClient implements Closeable {
 	 * 					If the message is a reply, ID of the original message
 	 * @param msg
 	 * 					Text of the message to be sent
-	 * @param useMarkdown
-	 * 					Send Markdown or not
+	 * @param parseMode
+	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
 	 * @param disablePreview
 	 * 					Disables link previews for links in this message or not
 	 */
-	public void replyMessage(String token, String chatID, long replyTo, String msg, boolean useMarkdown, boolean disablePreview) {
+	public void replyMessage(String token, String chatID, long replyTo, String msg, MessageParseMode parseMode, boolean disablePreview) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		if (Preconditions.isEmptyString(msg)) {
+			return;
+		}
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("text", "" + msg));
-		if (useMarkdown) {
-			items.add(new BasicNameValuePair("parse_mode", "Markdown"));
+		if (parseMode != null) {
+			items.add(new BasicNameValuePair("parse_mode", parseMode.name()));
 		}
 		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
 		items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
@@ -167,6 +172,7 @@ public class TelegramClient implements Closeable {
 	 * 					Offset length can’t exceed 64 bytes.
 	 */
 	public void answerInlineQuery(String token, String queryID, Collection<InlineQueryResult> results, Integer cacheTime, Boolean personal, String nextOffset) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		Preconditions.notEmptyString(queryID, "Answered query ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("inline_query_id", queryID));
@@ -197,14 +203,18 @@ public class TelegramClient implements Closeable {
 	}
 	
 	private void sendRepeatly(String token, String endpoint, List<NameValuePair> items) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		int interval = 1;
 		try {
 			while (!Thread.interrupted()) {
 				try {
 					this.send(token, endpoint, items);
 					break;
-				} catch (BotRemovedException | BadRequestException e) {
+				} catch (BotRemovedException e) {
 					LOGGER.error(e.getMessage());
+					break;
+				} catch (BadRequestException e) {
+					LOGGER.error(String.format("%s: %s", e.getMessage(), e.getRequestFormItems()));
 					break;
 				} catch (Exception e) {
 					if (interval > 17) {
@@ -221,6 +231,11 @@ public class TelegramClient implements Closeable {
 	}
 
 	private void send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(endpoint, "Telegram endpoint should be provided.");
+		if (items == null || items.isEmpty()) {
+			return;
+		}
 		HttpPost post = new HttpPost(String.format("https://api.telegram.org/bot%s/%s", token, endpoint));
 		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
 		LOGGER.trace(post.getRequestLine());
@@ -236,7 +251,7 @@ public class TelegramClient implements Closeable {
 		String content = EntityUtils.toString(entity);
 		LOGGER.trace(content);
 		if (status.getStatusCode() == 400) {
-			throw new BadRequestException(content);
+			throw new BadRequestException(content, items);
 		} else if (status.getStatusCode() == 403) {
 			throw new BotRemovedException(content);
 		} else if (status.getStatusCode() == 429) {

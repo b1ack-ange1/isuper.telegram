@@ -5,6 +5,7 @@ package org.isuper.telegram.models;
 
 import org.isuper.common.utils.Preconditions;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Super Wang
  *
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class InputTextMessageContent implements InputMessageContent {
 	
 	@JsonProperty("message_text")

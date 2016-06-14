@@ -42,6 +42,18 @@ public class InlineQueryResultArticle implements InlineQueryResult {
 	 * 				Title of the result
 	 * @param inputMessageContent
 	 * 				Content of the message to be sent
+	 */
+	public InlineQueryResultArticle(String id, String title, InputMessageContent inputMessageContent) {
+		this(id, title, inputMessageContent, null, true, null);
+	}
+
+	/**
+	 * @param id
+	 * 				Unique identifier for this result, 1-64 Bytes
+	 * @param title
+	 * 				Title of the result
+	 * @param inputMessageContent
+	 * 				Content of the message to be sent
 	 * @param url
 	 * 				Optional. URL of the result
 	 * @param hideURL
