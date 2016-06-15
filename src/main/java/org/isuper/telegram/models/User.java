@@ -49,7 +49,7 @@ public class User implements Serializable {
 			@JsonProperty("last_name") String lastName,
 			@JsonProperty("username") String username) {
 		this.id = id;
-		Preconditions.notEmptyString(firstName, "User's or bot's first name cannot be null or empty string!");
+		Preconditions.notNull(firstName, "User's or bot's first name cannot be null!");
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.username = username;
