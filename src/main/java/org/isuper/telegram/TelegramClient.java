@@ -25,11 +25,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
 import org.isuper.httpclient.AsyncHttpClient;
+import org.isuper.telegram.models.Chat;
+import org.isuper.telegram.models.ChatMember;
 import org.isuper.telegram.models.InlineQueryResult;
+import org.isuper.telegram.models.Message;
 import org.isuper.telegram.models.MessageParseMode;
+import org.isuper.telegram.models.User;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author Super Wang
@@ -38,6 +43,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class TelegramClient implements Closeable {
 	
 	private static final Logger LOGGER = LogManager.getLogger("telegram-client");
+	
+	private static final int MAX_RETRY = 20;
 	
 	private final AsyncHttpClient client;
 	
@@ -63,84 +70,258 @@ public class TelegramClient implements Closeable {
 	}
 
 	/**
+	 * A simple method for testing your bot's auth token. Requires no parameters.
+	 * Returns basic information about the bot in form of a User object.
+	 * 
 	 * @param token
 	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param msg
-	 * 					Text of the message to be sent
 	 */
-	public void sendMessage(String token, String chatID, String msg) {
-		this.sendMessage(token, chatID, msg, null, false);
-	}
-
-	/**
-	 * @param token
-	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param msg
-	 * 					Text of the message to be sent
-	 * @param parseMode
-	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
-	 * @param disablePreview
-	 * 					Disables link previews for links in this message or not
-	 */
-	public void sendMessage(String token, String chatID, String msg, MessageParseMode parseMode, boolean disablePreview) {
-		List<NameValuePair> items = new LinkedList<>();
-		items.add(new BasicNameValuePair("chat_id", "" + chatID));
-		items.add(new BasicNameValuePair("text", "" + msg));
-		if (parseMode != null) {
-			items.add(new BasicNameValuePair("parse_mode", parseMode.name()));
-		}
-		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
-		this.sendRepeatly(token, "sendMessage", items);
-	}
-
-	/**
-	 * @param token
-	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param replyTo
-	 * 					If the message is a reply, ID of the original message
-	 * @param msg
-	 * 					Text of the message to be sent
-	 */
-	public void replyMessage(String token, String chatID, long replyTo, String msg) {
-		this.replyMessage(token, chatID, replyTo, msg, null, false);
-	}
-
-	/**
-	 * @param token
-	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param replyTo
-	 * 					If the message is a reply, ID of the original message
-	 * @param msg
-	 * 					Text of the message to be sent
-	 * @param parseMode
-	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
-	 * @param disablePreview
-	 * 					Disables link previews for links in this message or not
-	 */
-	public void replyMessage(String token, String chatID, long replyTo, String msg, MessageParseMode parseMode, boolean disablePreview) {
+	public User getMe(String token) {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
-		if (Preconditions.isEmptyString(msg)) {
-			return;
+		return this.getResourceRepeatly(User.class, token, "getMe", null);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param text
+	 * 					Text of the message to be sent
+	 * @return 
+	 */
+	public Message sendMessage(String token, String chatID, String text) {
+		return this.sendMessage(token, chatID, text, null);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param text
+	 * 					Text of the message to be sent
+	 * @param replyTo
+	 * 					If the message is a reply, ID of the original message
+	 * @return 
+	 */
+	public Message sendMessage(String token, String chatID, String text, Long replyTo) {
+		return this.sendMessage(token, chatID, text, null, false, false, replyTo);
+	}
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param text
+	 * 					Text of the message to be sent
+	 * @param parseMode
+	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
+	 * @param disablePreview
+	 * 					Disables link previews for links in this message or not
+	 * @return 
+	 */
+	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, boolean disablePreview) {
+		return this.sendMessage(token, chatID, text, parseMode, disablePreview, null, null);
+	}
+	
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param text
+	 * 					Text of the message to be sent
+	 * @param parseMode
+	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
+	 * @param disablePreview
+	 * 					Disables link previews for links in this message or not
+	 * @param disableNotification
+	 * 					Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
+	 * @param replyTo
+	 * 					If the message is a reply, ID of the original message
+	 * @return 
+	 */
+	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, Boolean disablePreview, Boolean disableNotification, Long replyTo) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		if (Preconditions.isEmptyString(text)) {
+			return null;
 		}
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		items.add(new BasicNameValuePair("text", "" + msg));
+		items.add(new BasicNameValuePair("text", "" + text));
 		if (parseMode != null) {
 			items.add(new BasicNameValuePair("parse_mode", parseMode.name()));
 		}
-		items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
-		items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
-		this.sendRepeatly(token, "sendMessage", items);
+		if (disablePreview != null) {
+			items.add(new BasicNameValuePair("disable_web_page_preview", "" + disablePreview));
+		}
+		if (disableNotification != null) {
+			items.add(new BasicNameValuePair("disable_notification", "" + disablePreview));
+		}
+		if (replyTo != null) {
+			items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
+		}
+		return this.getResourceRepeatly(Message.class, token, "sendMessage", items);
 	}
 
+	/**
+	 * Use this method to forward messages of any kind.
+	 * On success, the sent Message is returned.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param fromChatID
+	 * 					Unique identifier for the chat where the original message was sent (or channel username in the format @channelusername)
+	 * @param disableNotification
+	 * 					Optional. Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
+	 * @param messageID
+	 * 					Unique message identifier
+	 */
+	public Message forwardMessage(String token, String chatID, String fromChatID, Boolean disableNotification, long messageID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		items.add(new BasicNameValuePair("from_chat_id", fromChatID));
+		items.add(new BasicNameValuePair("message_id", "" + messageID));
+		if (disableNotification != null) {
+			items.add(new BasicNameValuePair("disable_notification", disableNotification.toString()));
+		}
+		return this.getResourceRepeatly(Message.class, token, "forwardMessage", null);
+	}
+
+	/**
+	 * Use this method to kick a user from a group or a supergroup.
+	 * In the case of supergroups, the user will not be able to return to the group on their own using invite links, etc., unless unbanned first.
+	 * The bot must be an administrator in the group for this to work. Returns True on success.
+	 * Note: This will method only work if the ‘All Members Are Admins’ setting is off in the target group.
+	 * Otherwise members may only be removed by the group's creator or by the member that added them.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target group or username of the target supergroup (in the format @supergroupusername)
+	 * @param userID
+	 * 					Unique identifier of the target user
+	 */
+	public boolean kickChatMember(String token, String chatID, long userID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		items.add(new BasicNameValuePair("user_id", "" + userID));
+		return this.getResourceRepeatly(Boolean.class, token, "kickChatMember", items);
+	}
+	
+	/**
+	 * Use this method for your bot to leave a group, supergroup or channel. Returns True on success.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target group or username of the target supergroup (in the format @supergroupusername)
+	 */
+	public boolean leaveChat(String token, String chatID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		return this.getResourceRepeatly(Boolean.class, token, "leaveChat", items);
+	}
+	
+	/**
+	 * Use this method to unban a previously kicked user in a supergroup.
+	 * The user will not return to the group automatically, but will be able to join via link, etc.
+	 * The bot must be an administrator in the group for this to work. Returns True on success.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target group or username of the target supergroup (in the format @supergroupusername)
+	 * @param userID
+	 * 					Unique identifier of the target user
+	 */
+	public boolean unbanChatMember(String token, String chatID, long userID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Answered query ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		items.add(new BasicNameValuePair("user_id", "" + userID));
+		return this.getResourceRepeatly(Boolean.class, token, "unbanChatMember", items);
+	}
+	
+	/**
+	 * Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.).
+	 * Returns a Chat object on success.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)
+	 */
+	public Chat getChat(String token, String chatID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		return this.getResourceRepeatly(Chat.class, token, "getChat", items);
+	}
+	
+	/**
+	 * Use this method to get a list of administrators in a chat.
+	 * On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots.
+	 * If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)
+	 */
+	public List<ChatMember> getChatAdministrators(String token, String chatID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		return this.getResourcesRepeatly(ChatMember.class, null, token, "getChatAdministrators", items);
+	}
+	
+	/**
+	 * Use this method to get the number of members in a chat.
+	 * Returns Int on success.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)
+	 */
+	public int getChatMembersCount(String token, String chatID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		return this.getResourceRepeatly(Integer.class, token, "getChatMembersCount", items);
+	}
+	
+	/**
+	 * Use this method to get information about a member of a chat.
+	 * Returns a ChatMember object on success.
+	 * 
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)
+	 */
+	public List<ChatMember> getChatMember(String token, String chatID) {
+		Preconditions.notEmptyString(token, "Telegram token should be provided.");
+		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
+		List<NameValuePair> items = new LinkedList<>();
+		items.add(new BasicNameValuePair("chat_id", chatID));
+		return this.getResourcesRepeatly(ChatMember.class, null, token, "getChatMember", items);
+	}
+	
 	/**
 	 * @param token
 	 * 					The token of telegram API
@@ -152,7 +333,7 @@ public class TelegramClient implements Closeable {
 	public void answerInlineQuery(String token, String queryID, Collection<InlineQueryResult> results) {
 		this.answerInlineQuery(token, queryID, results, null, null, null);
 	}
-	
+
 	/**
 	 * @param token
 	 * 					The token of telegram API
@@ -201,15 +382,14 @@ public class TelegramClient implements Closeable {
 			LOGGER.error(e.getMessage(), e);
 		}
 	}
-	
-	private void sendRepeatly(String token, String endpoint, List<NameValuePair> items) {
-		Preconditions.notEmptyString(token, "Telegram token should be provided.");
-		int interval = 1;
+
+	private <T> List<T> getResourcesRepeatly(Class<T> resultClass, String treeKey, String token, String endpoint, List<NameValuePair> items) {
+		int retry = 0;
+		int interval = 0;
 		try {
 			while (!Thread.interrupted()) {
 				try {
-					this.send(token, endpoint, items);
-					break;
+					return this.getResources(resultClass, treeKey, token, endpoint, items);
 				} catch (BotRemovedException e) {
 					LOGGER.error(e.getMessage());
 					break;
@@ -220,24 +400,83 @@ public class TelegramClient implements Closeable {
 					if (interval > 17) {
 						interval = 17;
 					}
+					if (retry < MAX_RETRY) {
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+					}
 					TimeUnit.SECONDS.sleep(interval);
-					LOGGER.warn(String.format("Failed to send response back to telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+				}
+				if (retry >= MAX_RETRY) {
+					LOGGER.warn(String.format("Maximium retry count %d reached, failed to get resource from telegram server.", retry));
+					break;
 				}
 			}
 		} catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
 			LOGGER.info("Cancelling ...");
 		}
+		return Collections.emptyList();
+	}
+	
+	private <T> List<T> getResources(Class<T> resultClass, String treeKey, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+		JsonNode node = this.send(token, endpoint, items);
+		if (Preconditions.isEmptyString(treeKey)) {
+			return TelegramUtils.getObjectMapper().readValue(node.traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
+		}
+		if (node == null || !node.hasNonNull(treeKey)) {
+			return Collections.emptyList();
+		}
+		return TelegramUtils.getObjectMapper().readValue(node.get(treeKey).traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
 	}
 
-	private void send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+	private <T> T getResourceRepeatly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
+		int retry = 0;
+		int interval = 0;
+		try {
+			while (!Thread.interrupted()) {
+				try {
+					return this.getResource(resultClass, token, endpoint, items);
+				} catch (BotRemovedException e) {
+					LOGGER.error(e.getMessage());
+					break;
+				} catch (BadRequestException e) {
+					LOGGER.error(String.format("%s: %s", e.getMessage(), e.getRequestFormItems()));
+					break;
+				} catch (Exception e) {
+					if (interval > 17) {
+						interval = 17;
+					}
+					if (retry < MAX_RETRY) {
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+					}
+					TimeUnit.SECONDS.sleep(interval);
+				}
+				if (retry >= MAX_RETRY) {
+					LOGGER.warn(String.format("Maximium retry count %d reached, failed to get resource from telegram server.", retry));
+					break;
+				}
+			}
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			LOGGER.info("Cancelling ...");
+		}
+		return null;
+	}
+	
+	private <T> T getResource(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+		JsonNode node = this.send(token, endpoint, items);
+		if (node == null) {
+			return null;
+		}
+		return TelegramUtils.getObjectMapper().treeToValue(node, resultClass);
+	}
+	
+	private JsonNode send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		Preconditions.notEmptyString(endpoint, "Telegram endpoint should be provided.");
-		if (items == null || items.isEmpty()) {
-			return;
-		}
 		HttpPost post = new HttpPost(String.format("https://api.telegram.org/bot%s/%s", token, endpoint));
-		post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
+		if (items != null && !items.isEmpty()) {
+			post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
+		}
 		LOGGER.trace(post.getRequestLine());
 		
 		HttpResponse resp = this.client.execute(post, null).get();
@@ -259,6 +498,7 @@ public class TelegramClient implements Closeable {
 		} else if (status.getStatusCode() != 200) {
 			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
 		}
+		return TelegramUtils.getObjectMapper().readTree(content);
 	}
 
 	/* (non-Javadoc)
