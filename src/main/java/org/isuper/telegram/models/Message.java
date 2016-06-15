@@ -5,7 +5,6 @@ package org.isuper.telegram.models;
 
 import java.io.Serializable;
 
-import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -124,7 +123,6 @@ public class Message implements Serializable {
 		this.id = id;
 		this.from = from;
 		this.date = date;
-		Preconditions.notNull(chat, "Chat should be provided.");
 		this.chat = chat;
 		this.forwardFrom = forwardFrom;
 		this.forwardFromChat = forwardFromChat;
