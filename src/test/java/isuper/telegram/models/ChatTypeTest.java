@@ -1,7 +1,7 @@
 /**
  * 
  */
-package isuper.telegram.modes;
+package isuper.telegram.models;
 
 import java.io.IOException;
 import java.util.ArrayList;

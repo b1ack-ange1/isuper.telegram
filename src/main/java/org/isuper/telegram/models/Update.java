@@ -3,8 +3,6 @@
  */
 package org.isuper.telegram.models;
 
-import java.io.Serializable;
-
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,12 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Update implements Serializable {
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -9087313071078446145L;
+public class Update {
 	
 	public final long id;
 	public final Message message;

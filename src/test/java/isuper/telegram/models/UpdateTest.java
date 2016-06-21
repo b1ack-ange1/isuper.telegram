@@ -1,7 +1,7 @@
 /**
  * 
  */
-package isuper.telegram.modes;
+package isuper.telegram.models;
 
 import org.isuper.telegram.models.Update;
 import org.junit.Test;

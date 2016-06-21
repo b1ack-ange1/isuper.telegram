@@ -3,8 +3,6 @@
  */
 package org.isuper.telegram.models;
 
-import java.io.Serializable;
-
 import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
@@ -22,13 +20,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User implements Serializable {
+public class User {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4052116696388288998L;
-	
 	private final long id;
 	private final String firstName;
 	private final String lastName;
@@ -83,34 +76,6 @@ public class User implements Serializable {
 	 */
 	public String getUsername() {
 		return this.username;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (this.id ^ (this.id >>> 32));
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		User other = (User) obj;
-		if (this.id != other.id)
-			return false;
-		return true;
 	}
 
 	/* (non-Javadoc)

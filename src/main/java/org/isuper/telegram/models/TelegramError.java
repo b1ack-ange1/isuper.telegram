@@ -3,6 +3,7 @@
  */
 package org.isuper.telegram.models;
 
+import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -17,7 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TelegramErrorResponse implements TelegramResponse {
+public class TelegramError {
 	
 	private final boolean ok;
 	private final int errorCode;
@@ -25,18 +26,20 @@ public class TelegramErrorResponse implements TelegramResponse {
 	
 	/**
 	 * @param ok
-	 * 					The status of the response.
+	 * 					The status of the result.
 	 * @param errorCode
 	 * 					The error code.
 	 * @param description
 	 * 					The description of the error.
 	 */
 	@JsonCreator
-	public TelegramErrorResponse(
-			@JsonProperty("ok") boolean ok,
-			@JsonProperty("error_code") int errorCode,
+	public TelegramError(
+			@JsonProperty("ok") Boolean ok,
+			@JsonProperty("error_code") Integer errorCode,
 			@JsonProperty("description") String description) {
+		Preconditions.notNull(ok, "Status should be provided.");
 		this.ok = ok;
+		Preconditions.notNull(ok, "Error code should be provided.");
 		this.errorCode = errorCode;
 		this.description = description;
 	}
@@ -44,7 +47,6 @@ public class TelegramErrorResponse implements TelegramResponse {
 	/**
 	 * @return the ok
 	 */
-	@Override
 	public boolean isOk() {
 		return this.ok;
 	}

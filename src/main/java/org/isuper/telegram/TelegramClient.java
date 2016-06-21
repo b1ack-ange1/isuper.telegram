@@ -25,17 +25,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
 import org.isuper.httpclient.AsyncHttpClient;
-import org.isuper.telegram.exceptions.BadRequestException;
-import org.isuper.telegram.exceptions.BotRemovedException;
-import org.isuper.telegram.exceptions.TooManyRequestsException;
+import org.isuper.telegram.exceptions.BlankResponseException;
+import org.isuper.telegram.exceptions.InvalidJsonResponseException;
+import org.isuper.telegram.exceptions.NotJsonResponseException;
+import org.isuper.telegram.exceptions.RecoverableErrorResponseException;
+import org.isuper.telegram.exceptions.UnrecoverableErrorResponseException;
 import org.isuper.telegram.models.Chat;
 import org.isuper.telegram.models.ChatMember;
 import org.isuper.telegram.models.InlineQueryResult;
 import org.isuper.telegram.models.Message;
 import org.isuper.telegram.models.MessageParseMode;
-import org.isuper.telegram.models.TelegramBooleanResultResponse;
-import org.isuper.telegram.models.TelegramMessageResultResponse;
-import org.isuper.telegram.models.TelegramResultResponse;
 import org.isuper.telegram.models.User;
 import org.isuper.telegram.utils.TelegramUtils;
 
@@ -48,7 +47,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class TelegramClient implements Closeable {
 	
-	private static final Logger LOGGER = LogManager.getLogger("telegram-client");
+	private static final Logger LOGGER = LogManager.getLogger(TelegramClient.class);
 	
 	private static final int MAX_RETRY = 20;
 	
@@ -194,7 +193,7 @@ public class TelegramClient implements Closeable {
 		if (replyTo != null) {
 			items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
 		}
-		return this.getResourceRepeatly(TelegramMessageResultResponse.class, token, "sendMessage", items).getResult();
+		return this.getResourceRepeatly(Message.class, token, "sendMessage", items);
 	}
 
 	/**
@@ -248,7 +247,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("user_id", "" + userID));
-		return this.getResourceRepeatly(TelegramBooleanResultResponse.class, token, "kickChatMember", items).getResult();
+		return this.getResourceRepeatly(Boolean.class, token, "kickChatMember", items);
 	}
 	
 	/**
@@ -266,7 +265,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourceRepeatly(TelegramBooleanResultResponse.class, token, "leaveChat", items).getResult();
+		return this.getResourceRepeatly(Boolean.class, token, "leaveChat", items);
 	}
 	
 	/**
@@ -289,7 +288,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("user_id", "" + userID));
-		return this.getResourceRepeatly(TelegramBooleanResultResponse.class, token, "unbanChatMember", items).getResult();
+		return this.getResourceRepeatly(Boolean.class, token, "unbanChatMember", items);
 	}
 	
 	/**
@@ -327,7 +326,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourcesRepeatly(ChatMember.class, null, token, "getChatAdministrators", items);
+		return this.getResourcesRepeatly(ChatMember.class, token, "getChatAdministrators", items);
 	}
 	
 	/**
@@ -355,15 +354,18 @@ public class TelegramClient implements Closeable {
 	 * 					The token of telegram API
 	 * @param chatID
 	 * 					Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)
+	 * @param userID
+	 * 					Unique identifier of the target user
 	 * @return
 	 * 					Returns a ChatMember object on success.
 	 */
-	public List<ChatMember> getChatMember(String token, String chatID) {
+	public ChatMember getChatMember(String token, String chatID, long userID) {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourcesRepeatly(ChatMember.class, null, token, "getChatMember", items);
+		items.add(new BasicNameValuePair("user_id", "" + userID));
+		return this.getResourceRepeatly(ChatMember.class, token, "getChatMember", items);
 	}
 	
 	/**
@@ -420,28 +422,31 @@ public class TelegramClient implements Closeable {
 		if (!Preconditions.isEmptyString(nextOffset)) {
 			items.add(new BasicNameValuePair("next_offset", nextOffset));
 		}
-		this.getResourceRepeatly(TelegramResultResponse.class, token, "answerInlineQuery", items);
+		this.getResourceRepeatly(Boolean.class, token, "answerInlineQuery", items);
 	}
 
-	private <T> List<T> getResourcesRepeatly(Class<T> resultClass, String treeKey, String token, String endpoint, List<NameValuePair> items) {
+	private <T> List<T> getResourcesRepeatly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
 		int retry = 0;
 		int interval = 0;
 		try {
 			while (!Thread.interrupted()) {
 				try {
-					return this.getResources(resultClass, treeKey, token, endpoint, items);
-				} catch (BotRemovedException e) {
-					LOGGER.error(e.getMessage());
+					return this.getResources(resultClass, token, endpoint, items);
+				} catch (UnrecoverableErrorResponseException e) {
+					LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
+					LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
 					break;
-				} catch (BadRequestException e) {
-					LOGGER.error(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
-					break;
-				} catch (Exception e) {
+				} catch (Exception ex) {
+					if (ex instanceof RecoverableErrorResponseException) {
+						RecoverableErrorResponseException e = (RecoverableErrorResponseException) ex;
+						LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
+						LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
+					}
 					if (interval > 17) {
 						interval = 17;
 					}
 					if (retry < MAX_RETRY) {
-						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval++));
 					}
 					TimeUnit.SECONDS.sleep(interval);
 				}
@@ -457,17 +462,6 @@ public class TelegramClient implements Closeable {
 		return Collections.emptyList();
 	}
 	
-	private <T> List<T> getResources(Class<T> resultClass, String treeKey, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
-		JsonNode node = this.send(token, endpoint, items);
-		if (Preconditions.isEmptyString(treeKey)) {
-			return TelegramUtils.getObjectMapper().readValue(node.traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
-		}
-		if (node == null || !node.hasNonNull(treeKey)) {
-			return Collections.emptyList();
-		}
-		return TelegramUtils.getObjectMapper().readValue(node.get(treeKey).traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
-	}
-
 	private <T> T getResourceRepeatly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
 		int retry = 0;
 		int interval = 0;
@@ -475,18 +469,21 @@ public class TelegramClient implements Closeable {
 			while (!Thread.interrupted()) {
 				try {
 					return this.getResource(resultClass, token, endpoint, items);
-				} catch (BotRemovedException e) {
-					LOGGER.error(e.getMessage());
+				} catch (UnrecoverableErrorResponseException e) {
+					LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
+					LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
 					break;
-				} catch (BadRequestException e) {
-					LOGGER.error(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
-					break;
-				} catch (Exception e) {
+				} catch (Exception ex) {
+					if (ex instanceof RecoverableErrorResponseException) {
+						RecoverableErrorResponseException e = (RecoverableErrorResponseException) ex;
+						LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
+						LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
+					}
 					if (interval > 17) {
 						interval = 17;
 					}
 					if (retry < MAX_RETRY) {
-						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", e.getMessage(), interval++));
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval++));
 					}
 					TimeUnit.SECONDS.sleep(interval);
 				}
@@ -502,17 +499,36 @@ public class TelegramClient implements Closeable {
 		return null;
 	}
 	
-	private <T> T getResource(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
-		JsonNode node = this.send(token, endpoint, items);
-		if (node == null) {
-			return null;
+	private <T> List<T> getResources(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, RecoverableErrorResponseException, UnrecoverableErrorResponseException {
+		JsonNode resultNode = this.send(token, endpoint, items);
+		if (resultNode == null) {
+			return Collections.emptyList();
+		} 
+		List<T> result = TelegramUtils.getObjectMapper().readValue(resultNode.traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
+		if (result == null) {
+			LOGGER.warn(String.format("Failed to parse valid list of %s from %s", resultClass, resultNode));
+			return Collections.emptyList();
 		}
-		return TelegramUtils.getObjectMapper().treeToValue(node, resultClass);
+		return result;
+	}
+
+	private <T> T getResource(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, RecoverableErrorResponseException, UnrecoverableErrorResponseException {
+		JsonNode resultNode = this.send(token, endpoint, items);
+		if (resultNode == null) {
+			return null;
+		} 
+		T result =  TelegramUtils.getObjectMapper().treeToValue(resultNode, resultClass);
+		if (result == null) {
+			LOGGER.warn(String.format("Failed to parse valid object of %s from %s", resultClass, resultNode));
+			return result;
+		}
+		return result;
 	}
 	
-	private JsonNode send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, BotRemovedException, BadRequestException, TooManyRequestsException {
+	private JsonNode send(String token, String endpoint, List<NameValuePair> items) throws IOException, ExecutionException, InterruptedException, RecoverableErrorResponseException, UnrecoverableErrorResponseException {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		Preconditions.notEmptyString(endpoint, "Telegram endpoint should be provided.");
+		
 		HttpPost post = new HttpPost(String.format("https://api.telegram.org/bot%s/%s", token, endpoint));
 		if (items != null && !items.isEmpty()) {
 			post.setEntity(new UrlEncodedFormEntity(items, Charset.forName("UTF-8")));
@@ -528,17 +544,26 @@ public class TelegramClient implements Closeable {
 		LOGGER.trace(contentType);
 		
 		String content = EntityUtils.toString(entity);
-		LOGGER.debug(content);
-		if (status.getStatusCode() == 400) {
-			throw new BadRequestException(content, items);
-		} else if (status.getStatusCode() == 403) {
-			throw new BotRemovedException(content);
-		} else if (status.getStatusCode() == 429) {
-			throw new TooManyRequestsException(content);
-		} else if (status.getStatusCode() != 200) {
-			throw new IOException(String.format("%d response received from server: %s", status.getStatusCode(), content));
+		LOGGER.trace(content);
+		if (Preconditions.isEmptyString(content)) {
+			throw new BlankResponseException(items);
 		}
-		return TelegramUtils.getObjectMapper().readTree(content);
+		if (status.getStatusCode() == 400 || status.getStatusCode() == 403 || status.getStatusCode() == 409) {
+			throw new UnrecoverableErrorResponseException(content, items);
+		} else if (status.getStatusCode() != 200) {
+			throw new RecoverableErrorResponseException(content, items);
+		}
+		JsonNode node = TelegramUtils.getObjectMapper().readTree(content);
+		if (node == null) {
+			throw new NotJsonResponseException(content, items);
+		}
+		if (!node.hasNonNull("ok") || (!node.hasNonNull("result") && !node.hasNonNull("error_code"))) {
+			throw new InvalidJsonResponseException(content, items);
+		}
+		if (!node.get("ok").asBoolean() || node.hasNonNull("error_code")) {
+			throw new RecoverableErrorResponseException(content, items);
+		}
+		return node.get("result");
 	}
 
 	/* (non-Javadoc)

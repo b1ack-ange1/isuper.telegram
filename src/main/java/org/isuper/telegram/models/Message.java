@@ -37,6 +37,7 @@ public class Message implements Serializable {
 	public final Message replyTo;
 	public final Long editDate;
 	public final String text;
+	public final Contact contact;
 	public final Location location;
 	public final User newChatParticipant;
 	public final User leftChatParticipant;
@@ -71,6 +72,8 @@ public class Message implements Serializable {
 	 * 					Optional. Date the message was last edited in Unix time
 	 * @param text
 	 * 					Optional. For text messages, the actual UTF-8 text of the message
+	 * @param contact
+	 * 					Optional. Message is a shared contact, information about the contact
 	 * @param location
 	 * 					Optional. Message is a shared location, information about the location
 	 * @param newChatParticipant
@@ -107,6 +110,7 @@ public class Message implements Serializable {
 			@JsonProperty("reply_to_message") Message replyTo,
 			@JsonProperty("edit_date") Long editDate,
 			@JsonProperty("text") String text,
+			@JsonProperty("contact") Contact contact,
 			@JsonProperty("location") Location location,
 			@JsonProperty("new_chat_participant") User newChatParticipant,
 			@JsonProperty("left_chat_participant") User leftChatParticipant,
@@ -130,6 +134,7 @@ public class Message implements Serializable {
 		this.replyTo = replyTo;
 		this.editDate = editDate;
 		this.text = text;
+		this.contact = contact;
 		this.location = location;
 		this.newChatParticipant = newChatParticipant;
 		this.leftChatParticipant = leftChatParticipant;
