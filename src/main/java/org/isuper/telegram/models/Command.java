@@ -3,21 +3,14 @@
  */
 package org.isuper.telegram.models;
 
-import java.io.Serializable;
-
 import org.isuper.common.utils.Preconditions;
 
 /**
  * @author Super Wang
  *
  */
-public class Command implements Serializable {
+public class Command {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1956005239265903337L;
-	
 	public final String type;
 	public final String toBot;
 	public final String argument;

@@ -4,6 +4,7 @@
 package isuper.telegram.models;
 
 import org.isuper.telegram.models.Update;
+import org.isuper.telegram.utils.TelegramUtils;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class UpdateTest {
 	
-	private static final ObjectMapper MAPPER = new ObjectMapper();
+	private static final ObjectMapper MAPPER = TelegramUtils.getObjectMapper();
 	
 	@Test
 	public void testParse() {

@@ -3,8 +3,6 @@
  */
 package org.isuper.telegram.models;
 
-import java.io.Serializable;
-
 import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
@@ -22,18 +20,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Chat implements Serializable {
+public class Chat {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4478241009092585429L;
-	
+	@JsonProperty("id")
 	public final long id;
+	@JsonProperty("type")
 	public final ChatType type;
+	@JsonProperty("title")
 	public final String title;
+	@JsonProperty("username")
 	public final String username;
+	@JsonProperty("first_name")
 	public final String firstName;
+	@JsonProperty("last_name")
 	public final String lastName;
 	
 	/**
@@ -52,17 +51,18 @@ public class Chat implements Serializable {
 	 */
 	@JsonCreator
 	public Chat(
-			@JsonProperty("id") long id,
+			@JsonProperty("id") Long id,
 			@JsonProperty("type") ChatType type,
 			@JsonProperty("title") String title,
 			@JsonProperty("username") String username,
 			@JsonProperty("first_name") String firstName,
 			@JsonProperty("last_name") String lastName) {
+		Preconditions.notNull(id, "Chat ID should be provided.");
 		if (Math.abs(id) > 1e13) {
 			throw new IllegalArgumentException(String.format("Unique identifier for this chat should not exceeding 1e13 by absolute value, but got %d", id));
 		}
 		this.id = id;
-		Preconditions.notNull(type, "ChatType should not be null!");
+		Preconditions.notNull(type, "ChatType should be provided.");
 		this.type = type;
 		this.title = title;
 		this.username = username;
@@ -70,45 +70,21 @@ public class Chat implements Serializable {
 		this.lastName = lastName;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (this.id ^ (this.id >>> 32));
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Chat other = (Chat) obj;
-		if (this.id != other.id)
-			return false;
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

@@ -3,6 +3,9 @@
  */
 package org.isuper.telegram.models;
 
+import org.isuper.common.utils.Preconditions;
+import org.isuper.telegram.models.inline.ChosenInlineResult;
+import org.isuper.telegram.models.inline.InlineQuery;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,10 +24,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Update {
 	
+	@JsonProperty("update_id")
 	public final long id;
+	@JsonProperty("message")
 	public final Message message;
+	@JsonProperty("edited_message")
 	public final Message editedMessage;
+	@JsonProperty("inline_query")
 	public final InlineQuery inlineQuery;
+	@JsonProperty("chosen_inline_result")
 	public final ChosenInlineResult chosenInlineResult;
 	
 	/**
@@ -41,11 +49,12 @@ public class Update {
 	 */
 	@JsonCreator
 	public Update(
-			@JsonProperty("update_id") long id,
+			@JsonProperty("update_id") Long id,
 			@JsonProperty("message") Message message,
 			@JsonProperty("edited_message") Message editedMessage,
 			@JsonProperty("inline_query") InlineQuery inlineQuery,
 			@JsonProperty("chosen_inline_result") ChosenInlineResult chosenInlineResult) {
+		Preconditions.notNull(id, "Update ID should be provided.");
 		this.id = id;
 		this.message = message;
 		this.editedMessage = editedMessage;
@@ -53,17 +62,21 @@ public class Update {
 		this.chosenInlineResult = chosenInlineResult;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

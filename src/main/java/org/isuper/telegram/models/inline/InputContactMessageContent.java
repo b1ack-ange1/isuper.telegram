@@ -1,11 +1,14 @@
 /**
  * 
  */
-package org.isuper.telegram.models;
+package org.isuper.telegram.models.inline;
 
 import org.isuper.common.utils.Preconditions;
+import org.isuper.telegram.utils.TelegramUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Represents the content of a contact message to be sent as the result of an inline query.
@@ -13,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Super Wang
  *
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class InputContactMessageContent implements InputMessageContent {
 	
 	@JsonProperty("phone_number")
@@ -38,4 +42,21 @@ public class InputContactMessageContent implements InputMessageContent {
 		this.lastName = lastName;
 	}
 
+	public String toJSON() {
+		try {
+			return TelegramUtils.getObjectMapper().writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
+	}
+	
 }

@@ -32,10 +32,11 @@ import org.isuper.telegram.exceptions.RecoverableErrorResponseException;
 import org.isuper.telegram.exceptions.UnrecoverableErrorResponseException;
 import org.isuper.telegram.models.Chat;
 import org.isuper.telegram.models.ChatMember;
-import org.isuper.telegram.models.InlineQueryResult;
 import org.isuper.telegram.models.Message;
 import org.isuper.telegram.models.MessageParseMode;
 import org.isuper.telegram.models.User;
+import org.isuper.telegram.models.inline.InlineQueryResult;
+import org.isuper.telegram.models.markups.ReplyMarkup;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -98,23 +99,7 @@ public class TelegramClient implements Closeable {
 	 * 					On success, the sent Message is returned.
 	 */
 	public Message sendMessage(String token, String chatID, String text) {
-		return this.sendMessage(token, chatID, text, null);
-	}
-
-	/**
-	 * @param token
-	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param text
-	 * 					Text of the message to be sent
-	 * @param replyTo
-	 * 					If the message is a reply, ID of the original message
-	 * @return 
-	 * 					On success, the sent Message is returned.
-	 */
-	public Message sendMessage(String token, String chatID, String text, Long replyTo) {
-		return this.sendMessage(token, chatID, text, null, false, false, replyTo);
+		return this.sendMessage(token, chatID, text, null, null, null, null, null);
 	}
 
 	/**
@@ -127,34 +112,32 @@ public class TelegramClient implements Closeable {
 	 * @param parseMode
 	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
 	 * @param disablePreview
-	 * 					Disables link previews for links in this message or not
-	 * @return 
-	 * 					On success, the sent Message is returned.
-	 */
-	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, Boolean disablePreview) {
-		return this.sendMessage(token, chatID, text, parseMode, disablePreview, null, null);
-	}
-	
-	/**
-	 * @param token
-	 * 					The token of telegram API
-	 * @param chatID
-	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	 * @param text
-	 * 					Text of the message to be sent
-	 * @param parseMode
-	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
-	 * @param disablePreview
-	 * 					Disables link previews for links in this message or not
+	 * 					Optional. Disables link previews for links in this message or not
 	 * @param disableNotification
-	 * 					Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
+	 * 					Optional. Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
 	 * @return 
 	 * 					On success, the sent Message is returned.
 	 */
 	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, Boolean disablePreview, Boolean disableNotification) {
-		return this.sendMessage(token, chatID, text, parseMode, disablePreview, disableNotification, null);
+		return this.sendMessage(token, chatID, text, parseMode, disablePreview, disableNotification, null, null);
 	}
-	
+
+	/**
+	 * @param token
+	 * 					The token of telegram API
+	 * @param chatID
+	 * 					Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+	 * @param text
+	 * 					Text of the message to be sent
+	 * @param replyTo
+	 * 					Optional. If the message is a reply, ID of the original message
+	 * @return 
+	 * 					On success, the sent Message is returned.
+	 */
+	public Message sendMessage(String token, String chatID, String text, Long replyTo) {
+		return this.sendMessage(token, chatID, text, null, null, null, replyTo, null);
+	}
+
 	/**
 	 * @param token
 	 * 					The token of telegram API
@@ -165,15 +148,17 @@ public class TelegramClient implements Closeable {
 	 * @param parseMode
 	 * 					Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
 	 * @param disablePreview
-	 * 					Disables link previews for links in this message or not
+	 * 					Optional. Disables link previews for links in this message or not
 	 * @param disableNotification
-	 * 					Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
+	 * 					Optional. Sends the message silently. iOS users will not receive a notification, Android users will receive a notification with no sound.
 	 * @param replyTo
-	 * 					If the message is a reply, ID of the original message
+	 * 					Optional. If the message is a reply, ID of the original message
+	 * @param replyMarkup
+	 * 					Optional. Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to hide reply keyboard or to force a reply from the user.
 	 * @return 
 	 * 					On success, the sent Message is returned.
 	 */
-	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, Boolean disablePreview, Boolean disableNotification, Long replyTo) {
+	public Message sendMessage(String token, String chatID, String text, MessageParseMode parseMode, Boolean disablePreview, Boolean disableNotification, Long replyTo, ReplyMarkup replyMarkup) {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
 		if (Preconditions.isEmptyString(text)) {
 			return null;
@@ -192,6 +177,13 @@ public class TelegramClient implements Closeable {
 		}
 		if (replyTo != null) {
 			items.add(new BasicNameValuePair("reply_to_message_id", "" + replyTo));
+		}
+		if (replyMarkup != null) {
+			try {
+				items.add(new BasicNameValuePair("reply_markup", TelegramUtils.getObjectMapper().writeValueAsString(replyMarkup)));
+			} catch (JsonProcessingException e) {
+				LOGGER.error(e.getMessage(), e);
+			}
 		}
 		return this.getResourceRepeatly(Message.class, token, "sendMessage", items);
 	}
@@ -404,11 +396,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("inline_query_id", queryID));
 		try {
-			if (results == null) {
-				items.add(new BasicNameValuePair("results", TelegramUtils.getObjectMapper().writeValueAsString(Collections.emptyList())));
-			} else {
-				items.add(new BasicNameValuePair("results", TelegramUtils.getObjectMapper().writeValueAsString(results)));
-			}
+			items.add(new BasicNameValuePair("results", TelegramUtils.getObjectMapper().writeValueAsString(results == null ? Collections.emptyList() : results)));
 		} catch (JsonProcessingException e) {
 			LOGGER.error(e.getMessage(), e);
 			items.add(new BasicNameValuePair("results", "[]"));
@@ -470,13 +458,12 @@ public class TelegramClient implements Closeable {
 				try {
 					return this.getResource(resultClass, token, endpoint, items);
 				} catch (UnrecoverableErrorResponseException e) {
-					LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
+					LOGGER.error(e.getMessage());
 					LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
 					break;
 				} catch (Exception ex) {
 					if (ex instanceof RecoverableErrorResponseException) {
 						RecoverableErrorResponseException e = (RecoverableErrorResponseException) ex;
-						LOGGER.error(String.format("%d: %s", e.getError().getErrorCode(), e.getError().getDescription()));
 						LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
 					}
 					if (interval > 17) {

@@ -3,8 +3,7 @@
  */
 package org.isuper.telegram.models;
 
-import java.io.Serializable;
-
+import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,35 +19,53 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Message implements Serializable {
+public class Message {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1535039204547512780L;
-	
+	@JsonProperty("message_id")
 	public final long id;
+	@JsonProperty("from")
 	public final User from;
+	@JsonProperty("date")
 	public final long date;
+	@JsonProperty("chat")
 	public final Chat chat;
+	@JsonProperty("forward_from")
 	public final User forwardFrom;
+	@JsonProperty("forward_from_chat")
 	public final Chat forwardFromChat;
+	@JsonProperty("forward_date")
 	public final Long forwardDate;
+	@JsonProperty("reply_to_message")
 	public final Message replyTo;
+	@JsonProperty("edit_date")
 	public final Long editDate;
+	@JsonProperty("text")
 	public final String text;
+	@JsonProperty("contact")
 	public final Contact contact;
+	@JsonProperty("location")
 	public final Location location;
+	@JsonProperty("new_chat_participant")
 	public final User newChatParticipant;
+	@JsonProperty("left_chat_participant")
 	public final User leftChatParticipant;
+	@JsonProperty("new_chat_title")
 	public final String newChatTitle;
+	@JsonProperty("new_chat_photo")
 	public final PhotoSize[] newChatPhoto;
+	@JsonProperty("delete_chat_photo")
 	public final Boolean deleteChatPhoto;
+	@JsonProperty("group_chat_created")
 	public final Boolean groupChatCreated;
+	@JsonProperty("supergroup_chat_created")
 	public final Boolean supergroupChatCreated;
+	@JsonProperty("channel_chat_created")
 	public final Boolean channelChatCreated;
+	@JsonProperty("migrate_to_chat_id")
 	public final Long migrateToChatID;
+	@JsonProperty("migrate_from_chat_id")
 	public final Long migrateFromChatID;
+	@JsonProperty("pinned_message")
 	public final Message pinned;
 	
 	/**
@@ -100,9 +117,9 @@ public class Message implements Serializable {
 	 * 					Optional. Specified message was pinned. Note that the Message object in this field will not contain further reply_to_message fields even if it is itself a reply.
 	 */
 	public Message(
-			@JsonProperty("message_id") long id,
+			@JsonProperty("message_id") Long id,
 			@JsonProperty("from") User from,
-			@JsonProperty("date") long date,
+			@JsonProperty("date") Long date,
 			@JsonProperty("chat") Chat chat,
 			@JsonProperty("forward_from") User forwardFrom,
 			@JsonProperty("forward_from_chat") Chat forwardFromChat,
@@ -124,8 +141,10 @@ public class Message implements Serializable {
 			@JsonProperty("migrate_from_chat_id") Long migrateFromChatID,
 			@JsonProperty("pinned_message") Message pinned
 			) {
+		Preconditions.notNull(id, "Message ID should be provided.");
 		this.id = id;
 		this.from = from;
+		Preconditions.notNull(date, "Message sent date should be provided.");
 		this.date = date;
 		this.chat = chat;
 		this.forwardFrom = forwardFrom;
@@ -149,45 +168,21 @@ public class Message implements Serializable {
 		this.pinned = pinned;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (this.id ^ (this.id >>> 32));
-		return result;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Message other = (Message) obj;
-		if (this.id != other.id)
-			return false;
-		return true;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

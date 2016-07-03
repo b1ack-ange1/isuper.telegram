@@ -1,12 +1,15 @@
 /**
  * 
  */
-package org.isuper.telegram.models;
+package org.isuper.telegram.models.inline;
 
 import org.isuper.common.utils.Preconditions;
+import org.isuper.telegram.models.MessageParseMode;
+import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Represents the content of a text message to be sent as the result of an inline query.
@@ -39,4 +42,21 @@ public class InputTextMessageContent implements InputMessageContent {
 		this.disableWebPagePreview = disableWebPagePreview;
 	}
 
+	public String toJSON() {
+		try {
+			return TelegramUtils.getObjectMapper().writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
+	}
+	
 }

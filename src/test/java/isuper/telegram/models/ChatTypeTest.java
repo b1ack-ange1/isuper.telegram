@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.isuper.telegram.models.ChatType;
+import org.isuper.telegram.utils.TelegramUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ChatTypeTest {
 	
-	private static final ObjectMapper MAPPER = new ObjectMapper();
+	private static final ObjectMapper MAPPER = TelegramUtils.getObjectMapper();
 	
 	@Test
 	public void testParse() {

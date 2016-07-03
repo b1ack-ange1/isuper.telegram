@@ -1,36 +1,38 @@
 /**
  * 
  */
-package org.isuper.telegram.models;
-
-import java.io.Serializable;
+package org.isuper.telegram.models.inline;
 
 import org.isuper.common.utils.Preconditions;
+import org.isuper.telegram.models.Location;
+import org.isuper.telegram.models.User;
+import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
- * This object represents a message.
+ * This object represents an incoming inline query. When the user sends an empty query, your bot could return some default or trending results.
  * 
  * @author Super Wang
  *
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class InlineQuery implements Serializable {
+public class InlineQuery {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5537039044986720296L;
-	
+	@JsonProperty("id")
 	public final String id;
+	@JsonProperty("from")
 	public final User from;
+	@JsonProperty("location")
 	public final Location location;
+	@JsonProperty("query")
 	public final String query;
+	@JsonProperty("offset")
 	public final String offset;
 	
 	/**
@@ -62,4 +64,21 @@ public class InlineQuery implements Serializable {
 		this.offset = offset;
 	}
 
+	public String toJSON() {
+		try {
+			return TelegramUtils.getObjectMapper().writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
+	}
+	
 }

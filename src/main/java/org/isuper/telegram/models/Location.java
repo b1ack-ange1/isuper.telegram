@@ -19,7 +19,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class Location {
 
+	@JsonProperty("latitude")
 	public final float latitude;
+	@JsonProperty("longitude")
 	public final float longitude;
 	
 	/**
@@ -40,17 +42,21 @@ public class Location {
 		this.longitude = longitude;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

@@ -1,11 +1,11 @@
 /**
  * 
  */
-package org.isuper.telegram.models;
-
-import java.io.Serializable;
+package org.isuper.telegram.models.inline;
 
 import org.isuper.common.utils.Preconditions;
+import org.isuper.telegram.models.Location;
+import org.isuper.telegram.models.User;
 import org.isuper.telegram.utils.TelegramUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -15,24 +15,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
- * This object represents a message.
+ * Represents a result of an inline query that was chosen by the user and sent to their chat partner.
  * 
  * @author Super Wang
  *
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChosenInlineResult implements Serializable {
+public class ChosenInlineResult {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1360477690034862457L;
-	
+	@JsonProperty("result_id")
 	public final String resultID;
+	@JsonProperty("from")
 	public final User from;
+	@JsonProperty("location")
 	public final Location location;
+	@JsonProperty("inline_message_id")
 	public final String inlineMessageID;
+	@JsonProperty("query")
 	public final String query;
 	
 	/**
@@ -63,17 +63,21 @@ public class ChosenInlineResult implements Serializable {
 		this.query = query;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

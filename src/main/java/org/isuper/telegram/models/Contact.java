@@ -12,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
+ * This object represents a phone contact.
+ * 
  * @author Super Wang
  *
  */
@@ -19,10 +21,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Contact {
 
+	@JsonProperty("phone_number")
 	public final String phoneNumber;
+	@JsonProperty("first_name")
 	public final String firstName;
+	@JsonProperty("last_name")
 	public final String lastName;
-	public final Long userID;
+	@JsonProperty("user_id")
+	public final long userID;
 	
 	/**
 	 * @param phoneNumber
@@ -47,17 +53,21 @@ public class Contact {
 		this.userID = userID;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.isuper.telegram.models;
+package org.isuper.telegram.models.inline;
 
 /**
  * @author Super Wang

@@ -52,6 +52,14 @@ public class UnrecoverableErrorResponseException extends Exception {
 		this.requestFormItems = requestFormItems;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Throwable#getMessage()
+	 */
+	@Override
+	public String getMessage() {
+		return String.format("%d: %s", getError().getErrorCode(), getError().getDescription());
+	}
+
 	/**
 	 * @return the error
 	 */

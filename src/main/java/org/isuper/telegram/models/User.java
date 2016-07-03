@@ -22,10 +22,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class User {
 
-	private final long id;
-	private final String firstName;
-	private final String lastName;
-	private final String username;
+	@JsonProperty("id")
+	public final long id;
+	@JsonProperty("first_name")
+	public final String firstName;
+	@JsonProperty("last_name")
+	public final String lastName;
+	@JsonProperty("username")
+	public final String username;
 	
 	/**
 	 * @param id
@@ -39,56 +43,33 @@ public class User {
 	 */
 	@JsonCreator
 	public User(
-			@JsonProperty("id") long id,
+			@JsonProperty("id") Long id,
 			@JsonProperty("first_name") String firstName,
 			@JsonProperty("last_name") String lastName,
 			@JsonProperty("username") String username) {
+		Preconditions.notNull(id, "User's or bot's ID should be provided.");
 		this.id = id;
-		Preconditions.notNull(firstName, "User's or bot's first name cannot be null!");
+		Preconditions.notNull(firstName, "User's or bot's first name should be provided.");
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.username = username;
 	}
 
-	/**
-	 * @return the id
-	 */
-	public long getId() {
-		return this.id;
-	}
-
-	/**
-	 * @return the firstName
-	 */
-	public String getFirstName() {
-		return this.firstName;
-	}
-
-	/**
-	 * @return the lastName
-	 */
-	public String getLastName() {
-		return this.lastName;
-	}
-
-	/**
-	 * @return the username
-	 */
-	public String getUsername() {
-		return this.username;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
+	public String toJSON() {
 		try {
 			return TelegramUtils.getObjectMapper().writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		return "{}";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.toJSON();
 	}
 	
 }
