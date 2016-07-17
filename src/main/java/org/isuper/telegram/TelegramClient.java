@@ -19,12 +19,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
-import org.isuper.httpclient.AsyncHttpClient;
+import org.isuper.httpclient.utils.HttpClientUtils;
 import org.isuper.telegram.exceptions.BlankResponseException;
 import org.isuper.telegram.exceptions.InvalidJsonResponseException;
 import org.isuper.telegram.exceptions.NotJsonResponseException;
@@ -52,7 +53,7 @@ public class TelegramClient implements Closeable {
 	
 	private static final int MAX_RETRY = 20;
 	
-	private final AsyncHttpClient client;
+	private final CloseableHttpAsyncClient client;
 	
 	/**
 	 * 
@@ -68,11 +69,7 @@ public class TelegramClient implements Closeable {
 	 * 				Optional, unless you want to proxy your request, set the proxy port here
 	 */
 	public TelegramClient(final String proxyHostname, final int proxyPort) {
-		try {
-			this.client = AsyncHttpClient.newInstance(proxyHostname, proxyPort);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		this.client = HttpClientUtils.asyncInstance(proxyHostname, proxyPort);
 	}
 
 	/**
@@ -85,7 +82,7 @@ public class TelegramClient implements Closeable {
 	 */
 	public User getMe(String token) {
 		Preconditions.notEmptyString(token, "Telegram token should be provided.");
-		return this.getResourceRepeatly(User.class, token, "getMe", null);
+		return this.getResourceRepeatedly(User.class, token, "getMe", null);
 	}
 
 	/**
@@ -185,7 +182,7 @@ public class TelegramClient implements Closeable {
 				LOGGER.error(e.getMessage(), e);
 			}
 		}
-		return this.getResourceRepeatly(Message.class, token, "sendMessage", items);
+		return this.getResourceRepeatedly(Message.class, token, "sendMessage", items);
 	}
 
 	/**
@@ -213,7 +210,7 @@ public class TelegramClient implements Closeable {
 		if (disableNotification != null) {
 			items.add(new BasicNameValuePair("disable_notification", disableNotification.toString()));
 		}
-		return this.getResourceRepeatly(Message.class, token, "forwardMessage", null);
+		return this.getResourceRepeatedly(Message.class, token, "forwardMessage", null);
 	}
 
 	/**
@@ -239,7 +236,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("user_id", "" + userID));
-		return this.getResourceRepeatly(Boolean.class, token, "kickChatMember", items);
+		return this.getResourceRepeatedly(Boolean.class, token, "kickChatMember", items);
 	}
 	
 	/**
@@ -257,7 +254,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourceRepeatly(Boolean.class, token, "leaveChat", items);
+		return this.getResourceRepeatedly(Boolean.class, token, "leaveChat", items);
 	}
 	
 	/**
@@ -280,7 +277,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("user_id", "" + userID));
-		return this.getResourceRepeatly(Boolean.class, token, "unbanChatMember", items);
+		return this.getResourceRepeatedly(Boolean.class, token, "unbanChatMember", items);
 	}
 	
 	/**
@@ -298,7 +295,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourceRepeatly(Chat.class, token, "getChat", items);
+		return this.getResourceRepeatedly(Chat.class, token, "getChat", items);
 	}
 	
 	/**
@@ -318,7 +315,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourcesRepeatly(ChatMember.class, token, "getChatAdministrators", items);
+		return this.getResourcesRepeatedly(ChatMember.class, token, "getChatAdministrators", items);
 	}
 	
 	/**
@@ -336,7 +333,7 @@ public class TelegramClient implements Closeable {
 		Preconditions.notEmptyString(chatID, "Chat ID should be provided.");
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
-		return this.getResourceRepeatly(Integer.class, token, "getChatMembersCount", items);
+		return this.getResourceRepeatedly(Integer.class, token, "getChatMembersCount", items);
 	}
 	
 	/**
@@ -357,7 +354,7 @@ public class TelegramClient implements Closeable {
 		List<NameValuePair> items = new LinkedList<>();
 		items.add(new BasicNameValuePair("chat_id", chatID));
 		items.add(new BasicNameValuePair("user_id", "" + userID));
-		return this.getResourceRepeatly(ChatMember.class, token, "getChatMember", items);
+		return this.getResourceRepeatedly(ChatMember.class, token, "getChatMember", items);
 	}
 	
 	/**
@@ -410,10 +407,10 @@ public class TelegramClient implements Closeable {
 		if (!Preconditions.isEmptyString(nextOffset)) {
 			items.add(new BasicNameValuePair("next_offset", nextOffset));
 		}
-		this.getResourceRepeatly(Boolean.class, token, "answerInlineQuery", items);
+		this.getResourceRepeatedly(Boolean.class, token, "answerInlineQuery", items);
 	}
 
-	private <T> List<T> getResourcesRepeatly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
+	private <T> List<T> getResourcesRepeatedly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
 		int retry = 0;
 		int interval = 0;
 		try {
@@ -432,15 +429,16 @@ public class TelegramClient implements Closeable {
 					}
 					if (interval > 17) {
 						interval = 17;
+					} else {
+						interval++;
 					}
-					if (retry < MAX_RETRY) {
-						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval++));
+					if (retry++ < MAX_RETRY) {
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval));
+						TimeUnit.SECONDS.sleep(interval);
+					} else {
+						LOGGER.warn(String.format("Maximum retry count %d reached, failed to get resource from telegram server.", retry));
+						break;
 					}
-					TimeUnit.SECONDS.sleep(interval);
-				}
-				if (retry >= MAX_RETRY) {
-					LOGGER.warn(String.format("Maximium retry count %d reached, failed to get resource from telegram server.", retry));
-					break;
 				}
 			}
 		} catch (InterruptedException ie) {
@@ -450,7 +448,7 @@ public class TelegramClient implements Closeable {
 		return Collections.emptyList();
 	}
 	
-	private <T> T getResourceRepeatly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
+	private <T> T getResourceRepeatedly(Class<T> resultClass, String token, String endpoint, List<NameValuePair> items) {
 		int retry = 0;
 		int interval = 0;
 		try {
@@ -459,24 +457,25 @@ public class TelegramClient implements Closeable {
 					return this.getResource(resultClass, token, endpoint, items);
 				} catch (UnrecoverableErrorResponseException e) {
 					LOGGER.error(e.getMessage());
-					LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
+					LOGGER.error(String.format("%s: %s", e.getMessage(), e.getRequestFormItems()));
 					break;
 				} catch (Exception ex) {
 					if (ex instanceof RecoverableErrorResponseException) {
 						RecoverableErrorResponseException e = (RecoverableErrorResponseException) ex;
-						LOGGER.debug(String.format("%s: %s", e.getError().getDescription(), e.getRequestFormItems()));
+						LOGGER.debug(String.format("%s: %s", e.getMessage(), e.getRequestFormItems()));
 					}
 					if (interval > 17) {
 						interval = 17;
+					} else {
+						interval++;
 					}
-					if (retry < MAX_RETRY) {
-						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval++));
+					if (retry++ < MAX_RETRY) {
+						LOGGER.warn(String.format("Failed to get resource from telegram server because of %s, retry after %d second(s).", ex.getMessage(), interval));
+						TimeUnit.SECONDS.sleep(interval);
+					} else {
+						LOGGER.warn(String.format("Maximum retry count %d reached, failed to get resource from telegram server.", retry));
+						break;
 					}
-					TimeUnit.SECONDS.sleep(interval);
-				}
-				if (retry >= MAX_RETRY) {
-					LOGGER.warn(String.format("Maximium retry count %d reached, failed to get resource from telegram server.", retry));
-					break;
 				}
 			}
 		} catch (InterruptedException ie) {
@@ -494,7 +493,7 @@ public class TelegramClient implements Closeable {
 		List<T> result = TelegramUtils.getObjectMapper().readValue(resultNode.traverse(), TelegramUtils.getObjectMapper().getTypeFactory().constructCollectionType(List.class, resultClass));
 		if (result == null) {
 			LOGGER.warn(String.format("Failed to parse valid list of %s from %s", resultClass, resultNode));
-			return Collections.emptyList();
+			result = Collections.emptyList();
 		}
 		return result;
 	}
@@ -507,7 +506,6 @@ public class TelegramClient implements Closeable {
 		T result =  TelegramUtils.getObjectMapper().treeToValue(resultNode, resultClass);
 		if (result == null) {
 			LOGGER.warn(String.format("Failed to parse valid object of %s from %s", resultClass, resultNode));
-			return result;
 		}
 		return result;
 	}

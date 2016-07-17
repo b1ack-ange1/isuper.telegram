@@ -57,7 +57,7 @@ public class UnrecoverableErrorResponseException extends Exception {
 	 */
 	@Override
 	public String getMessage() {
-		return String.format("%d: %s", getError().getErrorCode(), getError().getDescription());
+		return String.format("[%d]%s", getError().getErrorCode(), getError().getDescription());
 	}
 
 	/**
