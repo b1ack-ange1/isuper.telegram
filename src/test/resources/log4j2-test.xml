@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn">
+	<Properties>
+		<Property name="layout">%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %m%n</Property>
+	</Properties>
+	<Appenders>
+		<Console name="CONSOLE_LOG" target="SYSTEM_OUT">
+			<PatternLayout pattern="${layout}" />
+		</Console>
+		<Async name="DEFAULT_LOG">
+			<AppenderRef ref="CONSOLE_LOG" level="info" />
+		</Async>
+	</Appenders>
+	<Loggers>
+		<Root level="debug">
+			<AppenderRef ref="DEFAULT_LOG" />
+		</Root>
+	</Loggers>
+</Configuration>

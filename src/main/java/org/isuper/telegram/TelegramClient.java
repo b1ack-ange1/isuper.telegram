@@ -5,7 +5,9 @@ package org.isuper.telegram;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.ProxySelector;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -17,15 +19,20 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
-import org.isuper.httpclient.utils.HttpClientUtils;
 import org.isuper.telegram.exceptions.BlankResponseException;
 import org.isuper.telegram.exceptions.InvalidJsonResponseException;
 import org.isuper.telegram.exceptions.NotJsonResponseException;
@@ -53,23 +60,25 @@ public class TelegramClient implements Closeable {
 	
 	private static final int MAX_RETRY = 20;
 	
-	private final CloseableHttpAsyncClient client;
+	private final CloseableHttpAsyncClient httpclient;
 	
 	/**
 	 * 
 	 */
 	public TelegramClient() {
-		this(null, 1080);
-	}
-
-	/**
-	 * @param proxyHostname
-	 * 				Optional, unless you want to proxy your request, set the proxy hostname here
-	 * @param proxyPort
-	 * 				Optional, unless you want to proxy your request, set the proxy port here
-	 */
-	public TelegramClient(final String proxyHostname, final int proxyPort) {
-		this.client = HttpClientUtils.asyncInstance(proxyHostname, proxyPort);
+		RequestConfig reqConf = RequestConfig.custom()
+				.setCookieSpec(CookieSpecs.DEFAULT)
+				.setExpectContinueEnabled(true)
+				.setTargetPreferredAuthSchemes(Arrays.asList(AuthSchemes.NTLM, AuthSchemes.DIGEST))
+				.setProxyPreferredAuthSchemes(Arrays.asList(AuthSchemes.BASIC))
+				.build();
+		this.httpclient = HttpAsyncClients.custom()
+				.useSystemProperties()
+				.setDefaultCookieStore(new BasicCookieStore())
+				.setDefaultRequestConfig(reqConf)
+				.setRoutePlanner(new SystemDefaultRoutePlanner(ProxySelector.getDefault()))
+				.build();
+		this.httpclient.start();
 	}
 
 	/**
@@ -520,7 +529,7 @@ public class TelegramClient implements Closeable {
 		}
 		LOGGER.trace(post.getRequestLine());
 		
-		HttpResponse resp = this.client.execute(post, null).get();
+		HttpResponse resp = this.httpclient.execute(post, null).get();
 		StatusLine status = resp.getStatusLine();
 		LOGGER.trace(resp.getStatusLine());
 		
@@ -556,7 +565,7 @@ public class TelegramClient implements Closeable {
 	 */
 	@Override
 	public void close() throws IOException {
-		this.client.close();
+		this.httpclient.close();
 	}
 
 }

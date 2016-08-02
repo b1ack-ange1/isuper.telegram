@@ -1,11 +1,11 @@
 /**
  * 
  */
-package org.isuper.telegram;
+package org.isuper.telegram.bot;
 
+import java.io.IOException;
 import java.util.ResourceBundle;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.models.Command;
@@ -21,9 +21,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  * @author Super Wang
  *
  */
-public abstract class TelegramRobot {
+public abstract class TelegramBot {
 
-	protected void handleUpdate(Update update) {
+	protected void handleUpdate(Update update) throws IOException {
 		if (update == null) {
 			return;
 		}
@@ -54,19 +54,16 @@ public abstract class TelegramRobot {
 		}
 	}
 
-	protected Logger getLogger() {
-		return LogManager.getLogger(String.format("%s.bots.%s", TelegramRobot.class.getPackage().getName(), getRobotUsername()));
-	}
-	
+	protected abstract Logger getLogger();
 	protected abstract ResourceBundle getResourceBundle(Update update);
 	protected abstract String getRobotUsername();
 
-	protected abstract void handleNewParticipant(ResourceBundle bundle, Message message);
-	protected abstract void handleLocationMessage(ResourceBundle bundle, Message message);
-	protected abstract void handleOrdinaryTextMessage(ResourceBundle bundle, Message message);
-	protected abstract void handleCommands(ResourceBundle bundle, Command cmd, Message message);
+	protected abstract void handleNewParticipant(ResourceBundle bundle, Message message) throws IOException;
+	protected abstract void handleLocationMessage(ResourceBundle bundle, Message message) throws IOException;
+	protected abstract void handleOrdinaryTextMessage(ResourceBundle bundle, Message message) throws IOException;
+	protected abstract void handleCommands(ResourceBundle bundle, Command cmd, Message message) throws IOException;
 	
-	protected abstract void handleInlineQuery(ResourceBundle bundle, InlineQuery inlineQuery);
-	protected abstract void handleChosenInlineResult(ResourceBundle bundle, ChosenInlineResult chosenInlineResult);
+	protected abstract void handleInlineQuery(ResourceBundle bundle, InlineQuery inlineQuery) throws IOException;
+	protected abstract void handleChosenInlineResult(ResourceBundle bundle, ChosenInlineResult chosenInlineResult) throws IOException;
 	
 }
