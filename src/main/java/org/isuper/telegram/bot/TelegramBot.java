@@ -45,6 +45,8 @@ public abstract class TelegramBot {
 					this.handleCommands(bundle, cmd, update.message);
 				}
 			}
+		} else if (update.editedMessage != null) {
+			this.handleEditedTextMessage(bundle, update.editedMessage);
 		} else {
 			try {
 				getLogger().warn(TelegramUtils.getObjectMapper().writeValueAsString(update));
@@ -61,6 +63,8 @@ public abstract class TelegramBot {
 	protected abstract void handleNewParticipant(ResourceBundle bundle, Message message) throws IOException;
 	protected abstract void handleLocationMessage(ResourceBundle bundle, Message message) throws IOException;
 	protected abstract void handleOrdinaryTextMessage(ResourceBundle bundle, Message message) throws IOException;
+	protected abstract void handleEditedTextMessage(ResourceBundle bundle, Message editedMessage) throws IOException;
+
 	protected abstract void handleCommands(ResourceBundle bundle, Command cmd, Message message) throws IOException;
 	
 	protected abstract void handleInlineQuery(ResourceBundle bundle, InlineQuery inlineQuery) throws IOException;

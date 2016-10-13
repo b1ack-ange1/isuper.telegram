@@ -3,6 +3,8 @@
  */
 package org.isuper.telegram.models;
 
+import java.util.List;
+
 import org.isuper.common.utils.Preconditions;
 import org.isuper.telegram.utils.TelegramUtils;
 
@@ -41,6 +43,8 @@ public class Message {
 	public final Long editDate;
 	@JsonProperty("text")
 	public final String text;
+	@JsonProperty("entities")
+	public final List<MessageEntity> entities;
 	@JsonProperty("contact")
 	public final Contact contact;
 	@JsonProperty("location")
@@ -89,6 +93,8 @@ public class Message {
 	 * 					Optional. Date the message was last edited in Unix time
 	 * @param text
 	 * 					Optional. For text messages, the actual UTF-8 text of the message
+	 * @param entities
+	 * 					Optional. Optional. For text messages, special entities like usernames, URLs, bot commands, etc. that appear in the text
 	 * @param contact
 	 * 					Optional. Message is a shared contact, information about the contact
 	 * @param location
@@ -127,6 +133,7 @@ public class Message {
 			@JsonProperty("reply_to_message") Message replyTo,
 			@JsonProperty("edit_date") Long editDate,
 			@JsonProperty("text") String text,
+			@JsonProperty("entities") List<MessageEntity> entities,
 			@JsonProperty("contact") Contact contact,
 			@JsonProperty("location") Location location,
 			@JsonProperty("new_chat_participant") User newChatParticipant,
@@ -153,6 +160,7 @@ public class Message {
 		this.replyTo = replyTo;
 		this.editDate = editDate;
 		this.text = text;
+		this.entities = entities;
 		this.contact = contact;
 		this.location = location;
 		this.newChatParticipant = newChatParticipant;
